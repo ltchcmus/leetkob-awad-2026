@@ -10,4 +10,3 @@ GitHub: Required tests failed and merging was blocked.
 
 Fix SHA: 32662ad5a9e40bbe177e4de4fbf768a148c6ca1a
 Green CI: https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42515098585/job/128836282612
-
