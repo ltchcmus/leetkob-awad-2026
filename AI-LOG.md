@@ -293,3 +293,19 @@ No additional implementation proposal was rejected during this task.
 - Review the Git diff.
 - Commit and open the server integration pull request.
 - Record the PR URL and merge commit after completion.
+
+## 2026-11-09 — CI and Main Branch Protection
+
+**Owner:** Le Thanh Cong — 23120222
+
+**Tool:** Git, GitHub Actions, GitHub Rulesets, PowerShell.
+
+**Asked for:** Configure automated quality checks and protect the main branch.
+
+**Kept:** Four independent required checks: lint, format, typecheck and tests.
+
+**Changed:** Added GitHub Actions quality workflow and configured main branch protection through a GitHub Ruleset.
+
+**Rejected:** Direct pushes and force pushes to main are disallowed by the protection policy.
+
+**Validation:** GitHub Actions Quality / main #2 passed all four jobs at commit 645968c. Ruleset configuration and main SHA are recorded in docs/evidence/main-protection.md.
