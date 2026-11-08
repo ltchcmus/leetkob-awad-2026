@@ -17,11 +17,11 @@ The historical reference preserves its existing authorship, dates and evidence. 
 
 ## Team responsibilities
 
-| Member | Student ID | Responsibilities |
-|---|---|---|
-| Le Thanh Cong | 23120222 | Project configuration, server integration, CI, branch protection and release |
-| Nguyen Hung Thinh | 23120200 | SQLite, publication transactions, persistence, secret scan and ZIP verification |
-| Nguyen Phuc Hau | 23120252 | HTTP contract, authentication, tests, coverage and self-assessment |
+| Member            | Student ID | Responsibilities                                                                |
+| ----------------- | ---------- | ------------------------------------------------------------------------------- |
+| Le Thanh Cong     | 23120222   | Project configuration, server integration, CI, branch protection and release    |
+| Nguyen Hung Thinh | 23120200   | SQLite, publication transactions, persistence, secret scan and ZIP verification |
+| Nguyen Phuc Hau   | 23120252   | HTTP contract, authentication, tests, coverage and self-assessment              |
 
 ## 2026-11-08 — Initial project configuration
 
@@ -159,3 +159,36 @@ Perform LeeTKOB v1.0 Step 2 by integrating the supplied requirements, publish co
 - The repository-wide `npm run format:check` exited 1 and identified `AGENTS.md`, `AI-LOG.md`, `docs/permissions.md` and `README.md`; the three bootstrap files are outside this task and the supplied Step 2 files were not rewritten.
 - No test suite, contract test or full validation command was run for this step.
 - No pull request, merge or tag was created.
+
+## 2026-11-08 — Integrate and verify the SQLite publication repository
+
+**Owner:** Nguyễn Hưng Thịnh — 23120200
+
+**Tool:** OpenAI Codex, PowerShell, Git, Python ZIP and SHA-256 checks, Node.js 24.11.0, npm and native SQLite.
+
+**Asked for:**
+
+Complete Step 3 in the team repository after PR #2, verify the imported storage layer and demo seed, and open a PR for review.
+
+**Kept:**
+
+- The source ZIP's `src/repository.ts` and `scripts/seed-demo.ts` byte for byte. Their bytes also match the pinned source commit in `docs/provenance.md`.
+- `Principal` and `Publication` in the repository module. `assertAccess` is available to the future HTTP layer, and `publish` rechecks class assignment inside its SQLite write transaction before looking up a stored receipt.
+- New publications check the deadline, pending judge work, then undecided reviews. The receipt, mark snapshots and `lab.published` audit event commit together. Authorized replays read the persisted receipt.
+
+**Changed:**
+
+- Added the two assigned files on `codex/pa2-thinh-sqlite-publish`, based on `6ca2ccc`.
+- Corrected the local validation environment after the first shell probe supplied an empty `DATABASE_PATH`, which SQLite treated as a temporary database. Reran with the variable unset to exercise the on-disk default.
+
+**Rejected:**
+
+None. The assigned source files were ready to import as supplied.
+
+**Validation:**
+
+- Node.js `v24.11.0`. `npm ci`, `npm run lint` and `npm run typecheck` exited 0. Prettier passed for both imported files and this log.
+- With `DATABASE_PATH` unset, `npm run demo:seed` exited 0 twice. SQLite integrity was `ok`. The default `data/leetkob.db` contained one closed lab, one assigned demo TA, one counted submission and one decided review. Publication, mark and audit tables remained empty, and Git ignored the database.
+- Storage probes used a disposable copy of the database. An unassigned TA, a future deadline, pending judging, an undecided review and a competing writer were rejected without publication writes. A controlled failure on audit insertion rolled back the receipt and mark snapshot as well as the audit event.
+- A successful publish wrote one receipt, one mark and one audit event. After closing and reopening SQLite, another assigned TA received the same receipt bytes even after the source score changed. Revoking the original TA's class assignment blocked a later replay. The snapshot and row counts stayed unchanged.
+- The full format check reported existing issues in `AGENTS.md`, `docs/permissions.md` and `README.md`. HTTP contract validation belongs to Step 4.
