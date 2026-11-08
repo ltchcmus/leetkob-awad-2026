@@ -75,3 +75,87 @@ No additional implementation proposal was rejected during this task.
 - Handoff to Hau.
 
 Pending items are not recorded as completed.
+
+## 2026-11-08 — Prepare the active Step 2 execution prompt
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, local repository inspection, PowerShell and Git.
+
+**Asked for:**
+
+Review the current project folder and the LeeTKOB v1.0 deployment brief, then prepare and refine a prompt for Hau to perform his active Step 2 responsibility directly using the extracted source package.
+
+**Kept:**
+
+- The supplied Step 2 file scope: `docs/requirements.md`, `docs/contract/publish-lab.md`, `docs/contract/coverage.md` and `src/problem.ts`.
+- The required `/v1/labs/{labId}/publish` endpoint, 13 error types and HTTP 200 replay behavior as acceptance points to verify from the supplied source.
+- The existing repository type boundary: do not create `src/types.ts` or invent the later `repository.ts` integration.
+- The requirement to treat coverage as a plan at this stage, not as evidence of executed tests.
+
+**Changed:**
+
+No application or contract files were integrated while drafting the prompt. After the source package became available, the prompt was refined with its verified absolute path for Hau to execute Step 2 directly.
+
+**Rejected:**
+
+- Inventing missing source files or dependency stubs.
+- Claiming that Step 2 checks passed before the supplied `LeeTKOB/` source directory is available.
+- Running the full test suite while the repository intentionally contains only the Step 1 bootstrap.
+
+**Validation:**
+
+- Inspected all files currently present in the submission repository and the supplied deployment brief.
+- Confirmed `main` contains the merged Step 1 bootstrap.
+- The source directory was absent during the initial inspection. Before the prompt was regenerated, all four assigned files were found under `23120200-23120222-23120252_100/LeeTKOB/`.
+- No test or validation suite was run for this prompt-preparation task.
+
+## 2026-11-08 — Integrate and verify publish contract and problem definitions
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, local repository inspection, PowerShell and Git.
+
+**Asked for:**
+
+Perform LeeTKOB v1.0 Step 2 by integrating the supplied requirements, publish contract, coverage plan and problem definitions; verify the endpoint, error taxonomy, role and ownership rules, and idempotent replay behavior without implementing later steps. A follow-up request authorized rechecking the completed scope, committing it and pushing the topic branch.
+
+**Kept:**
+
+- The four supplied files byte-for-byte, including the five-section publish contract and its RFC 9457 problem definitions.
+- `POST /v1/labs/{labId}/publish` as the single specified operation.
+- All 13 supplied problem types and their status mappings.
+- Assigned-TA class ownership checks, including rechecking ownership inside the publication transaction and on replay.
+- Natural idempotency by lab: replay returns the original persisted receipt with HTTP 200 and makes no additional publication, mark snapshot or audit event.
+- `docs/contract/coverage.md` as a coverage plan, not evidence of an executed or passing test suite.
+- Repository-owned types remain reserved for the supplied `src/repository.ts` in Step 3; no `src/types.ts` was introduced.
+
+**Changed:**
+
+- Created the `pa2/hau-contract-spec` working branch.
+- Added `docs/requirements.md` from the supplied source.
+- Added `docs/contract/publish-lab.md` from the supplied source.
+- Added `docs/contract/coverage.md` from the supplied source.
+- Added `src/problem.ts` from the supplied source.
+
+**Rejected:**
+
+- Creating `src/types.ts`, a repository stub or any module assigned to Steps 3–5.
+- Rewriting or improving the supplied contract during integration.
+- Treating the planned coverage map as proof that tests have run or passed.
+- Running contract tests or the full validation suite before the later source and test modules are integrated.
+
+**Validation:**
+
+- SHA-256 comparison matched the supplied source for all four integrated files.
+- Confirmed the contract specifies `POST /v1/labs/{labId}/publish`, 13 problem types and HTTP 200 for both initial success and authorized replay.
+- Confirmed replay preserves the original byte-identical receipt and adds `Idempotent-Replayed: true` without additional stored side effects.
+- Confirmed `src/problem.ts` has no missing imports or dependency on a Step 3 module.
+- Confirmed neither `src/types.ts` nor `src/repository.ts` was created.
+- `npm ci` installed 100 locked packages and reported zero vulnerabilities; it also warned that the available Node.js 22.15.1 does not satisfy the required Node.js 24.11.0 engine.
+- `npm run lint` exited 0.
+- `npm run typecheck` exited 0.
+- A targeted Prettier check of the four supplied Step 2 files exited 0.
+- The repository-wide `npm run format:check` exited 1 and identified `AGENTS.md`, `AI-LOG.md`, `docs/permissions.md` and `README.md`; the three bootstrap files are outside this task and the supplied Step 2 files were not rewritten.
+- No test suite, contract test or full validation command was run for this step.
+- No pull request, merge or tag was created.
