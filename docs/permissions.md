@@ -5,6 +5,7 @@
 Read the repository and supplied course documents. Analyze requirements, implement assigned code and documentation, run deterministic local checks, create topic branches and local commits, prepare pull requests, inspect CI results, review changes and scan for secrets.
 
 Team responsibilities:
+
 - Cong (23120222): repository bootstrap, API server integration, CI, branch protection, red/green experiment and release.
 - Hau (23120252): contract, HTTP/authentication, contract tests, coverage and self-assessment report.
 - Thinh (23120200): SQLite repository, seed data, transaction verification, secret scanning and independent ZIP validation.

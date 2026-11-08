@@ -235,3 +235,61 @@ Perform LeeTKOB v1.0 Step 4 by integrating the supplied HTTP application, standa
 - The retry reported two file-level failures, zero passing test files and no contract-test assertion failure; the 24 test cases did not execute.
 - No test, fixture, contract, package script or existing implementation file was changed in response to the environment failures.
 - The completed scope was authorized for commit and branch push; no pull request, merge or tag was created by the assistant.
+
+## 2026-11-08 — API Server Integration and HTTP Verification
+
+**Owner:** Le Thanh Cong — 23120222
+
+**Tool:** Windows 11, PowerShell, Git, Node.js v24.11.0, npm, ESLint, Prettier, TypeScript, curl and ChatGPT.
+
+**Asked for:**
+
+Integrate the HTTP server with the existing authentication, application and SQLite repository modules. Document installation, configuration, quality checks and local API demonstration. Verify the publishing endpoint through real HTTP requests.
+
+**Kept:**
+
+- The existing HTTP contract and publication behavior.
+- The supplied src/server.ts implementation.
+- SQLite persistence and atomic publication transactions.
+- The existing authentication adapter.
+- The 24 authentication and contract tests.
+- Loopback binding and temporary SQLite database for local demonstration.
+
+**Changed:**
+
+- Added src/server.ts.
+- Updated README.md with installation, configuration, API demonstration and project documentation.
+- Applied Prettier formatting to AGENTS.md and docs/permissions.md without intentional rule changes.
+- Added docs/evidence/cong-api-verification.md with local verification results.
+
+**Rejected:**
+
+No additional implementation proposal was rejected during this task.
+
+**Validation:**
+
+- Node.js: v24.11.0.
+- npm run lint: PASS.
+- npm run format:check: PASS.
+- npm run typecheck: PASS.
+- npm test: 24 passed, 0 failed.
+- Demo seed: successful.
+- Local server: listening on 127.0.0.1:3108.
+- First publication request: HTTP 200.
+- Second publication request: HTTP 200.
+- Receipt hashes: identical.
+- First response: no Idempotent-Replayed header.
+- Second response: Idempotent-Replayed: true.
+- Invalid bearer token: HTTP 401 Unauthorized.
+- Error content type: application/problem+json.
+- Authentication challenge and security headers verified.
+
+**Evidence:**
+
+- docs/evidence/cong-api-verification.md
+
+**Pending:**
+
+- Review the Git diff.
+- Commit and open the server integration pull request.
+- Record the PR URL and merge commit after completion.

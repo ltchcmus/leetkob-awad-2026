@@ -1,4 +1,3 @@
-
 # LeeTKOB agent rules
 
 ## Stack
