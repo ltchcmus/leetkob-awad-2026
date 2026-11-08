@@ -192,3 +192,46 @@ None. The assigned source files were ready to import as supplied.
 - Storage probes used a disposable copy of the database. An unassigned TA, a future deadline, pending judging, an undecided review and a competing writer were rejected without publication writes. A controlled failure on audit insertion rolled back the receipt and mark snapshot as well as the audit event.
 - A successful publish wrote one receipt, one mark and one audit event. After closing and reopening SQLite, another assigned TA received the same receipt bytes even after the source score changed. Revoking the original TA's class assignment blocked a later replay. The snapshot and row counts stayed unchanged.
 - The full format check reported existing issues in `AGENTS.md`, `docs/permissions.md` and `README.md`. HTTP contract validation belongs to Step 4.
+
+## 2026-11-08 — Integrate and verify HTTP authentication and contract tests
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js, npm and the native Node test runner.
+
+**Asked for:**
+
+Perform LeeTKOB v1.0 Step 4 by integrating the supplied HTTP application, standalone demo authentication adapter and complete 24-test suite; verify authentication, validation, ownership and RFC 9457 error behavior without implementing the Step 5 server. A follow-up request authorized committing the reviewed scope and pushing the topic branch for a user-created pull request.
+
+**Kept:**
+
+- The supplied `src/app.ts`, `src/auth.ts`, `test/auth.test.ts` and `test/publish.contract.test.ts` byte for byte.
+- The complete fixture and helper structure, with one authentication test and 23 HTTP contract tests.
+- Authentication before role authorization, non-disclosing class ownership checks before body parsing, and a second ownership check inside the publication transaction.
+- All 13 problem types, their safe RFC 9457 envelopes and required headers.
+- HTTP 200 for initial publication and authorized replay, with a byte-identical receipt and `Idempotent-Replayed: true` only on replay.
+- Transaction, replay, persistence, contention and rollback cases remain listed for Thinh's later review; no completed review by Thinh is claimed here.
+
+**Changed:**
+
+- Created the `pa2/hau-http-contract-tests` working branch from main commit `caeb1d7`.
+- Added `src/app.ts` and `src/auth.ts` from the supplied source.
+- Added `test/auth.test.ts` and `test/publish.contract.test.ts` from the supplied source.
+
+**Rejected:**
+
+- Editing, skipping, renaming or splitting tests to produce a passing result.
+- Changing expected statuses, problem types, response bodies, headers, fixtures or the existing contract.
+- Adding a TypeScript loader, changing the npm test command or modifying Step 2–3 modules to work around the local Node.js version.
+- Adding `src/server.ts` or any Step 5 implementation.
+
+**Validation:**
+
+- SHA-256 comparison matched the supplied source for all four integrated files.
+- Static test discovery found one test in `test/auth.test.ts` and 23 tests in `test/publish.contract.test.ts`.
+- The available runtime was Node.js `v22.15.1` with npm `11.8.0`, not the required Node.js `24.11.0`; therefore this session does not claim official 24/24 acceptance evidence.
+- The first `npm test` attempt exited 1 before loading the test files because the sandbox denied test-runner worker creation with `spawn EPERM`.
+- A user-approved retry outside the sandbox exited 1 before executing the 24 test cases because Node.js 22 rejected the `.ts` files with `ERR_UNKNOWN_FILE_EXTENSION`.
+- The retry reported two file-level failures, zero passing test files and no contract-test assertion failure; the 24 test cases did not execute.
+- No test, fixture, contract, package script or existing implementation file was changed in response to the environment failures.
+- The completed scope was authorized for commit and branch push; no pull request, merge or tag was created by the assistant.
