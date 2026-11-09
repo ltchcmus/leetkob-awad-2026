@@ -309,3 +309,43 @@ No additional implementation proposal was rejected during this task.
 **Rejected:** Direct pushes and force pushes to main are disallowed by the protection policy.
 
 **Validation:** GitHub Actions Quality / main #2 passed all four jobs at commit 645968c. Ruleset configuration and main SHA are recorded in docs/evidence/main-protection.md.
+
+## 2026-11-09 — Assess PA2 criteria against submission evidence
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, repository documentation and supplied report template.
+
+**Asked for:**
+
+Create a Step 8 branch from the latest main branch, complete `SELF_ASSESSMENT_REPORT.md`, check all seven PA2 criteria against actual evidence in the repository and remote branches, calculate the supported total, and record Hau's work in the task log.
+
+**Kept:**
+
+- The supplied report's seven-criterion structure and maximum score of 100.
+- Actual submission-repository evidence for rules, permissions, commands, CI protection, the publish contract, contract tests and AI-assisted work.
+- The real replay red/green experiment: PR #8, bad and repair commits, and their red and green CI jobs.
+- The explicit PA2 boundary of no model provider, no model key, zero model calls and USD 0 spending.
+- Release, tag, upload and teammate review remain unclaimed until they occur.
+
+**Changed:**
+
+- Created `pa2/hau-self-assessment` from main commit `5066c13`.
+- Added `SELF_ASSESSMENT_REPORT.md` with all seven criteria, evidence links, criterion scores and a provisional total of 98/100.
+- Reserved two points in the permissions/secrets criterion because the submission repository does not yet contain Thinh's fresh history/tree secret scan evidence.
+- Added explicit follow-up ownership for the scan, final `PA2.md` and release work.
+
+**Rejected:**
+
+- Copying repository URLs, commits, CI runs, ownership experiments, scan reports or release claims from the supplied source report.
+- Claiming an independent ownership mutation that was not performed in this submission repository.
+- Claiming a `pa2` tag, release verification, final ZIP validation or Classroom upload before those events occur.
+- Claiming 100/100 before the missing submission-repository secret scan is available for review.
+
+**Validation:**
+
+- Confirmed local main and `origin/main` at `5066c13` before branching and inspected all available remote branches.
+- Confirmed the current repository does not yet contain `PA2.md`, a `pa2` tag or submission-repository secret scan evidence.
+- Verified the report cites the actual `ltchcmus/leetkob-awad-2026` repository, PR #8, bad commit `6715f5b`, repair commit `32662ad`, and their recorded red/green jobs.
+- Verified the seven claimed scores sum to 98: 15 + 8 + 10 + 20 + 25 + 15 + 5.
+- No test suite, commit, push, pull request, merge, tag or external publication was performed for this documentation task.
