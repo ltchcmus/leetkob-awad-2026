@@ -349,3 +349,36 @@ Create a Step 8 branch from the latest main branch, complete `SELF_ASSESSMENT_RE
 - Verified the report cites the actual `ltchcmus/leetkob-awad-2026` repository, PR #8, bad commit `6715f5b`, repair commit `32662ad`, and their recorded red/green jobs.
 - Verified the seven claimed scores sum to 98: 15 + 8 + 10 + 20 + 25 + 15 + 5.
 - No test suite, commit, push, pull request, merge, tag or external publication was performed for this documentation task.
+
+## 2026-11-09 — Verify SQLite transactions and scan submission history
+
+**Owner:** Nguyễn Hưng Thịnh — 23120200
+
+**Tool:** OpenAI Codex, Git, PowerShell, Node.js 24.11.0, npm, SQLite, Gitleaks 8.30.1 and the GitHub API.
+
+**Asked for:**
+
+Verify SQLite and the publish transaction after Step 8, scan the team repository for secrets, review the rubric and prepare the Step 9 submission.
+
+**Kept:**
+
+- The integrated storage and HTTP contract, including TA ownership checks, receipt persistence and atomic writes.
+- The team's own protection and replay evidence from PR #8, with the failed and repaired runs pinned to their actual commits.
+
+**Changed:**
+
+- Added the SQLite and Gitleaks evidence for `bc5e69a8eca6fe3ffa1e9219b75d7f5fb345c038`.
+- Added the required root `PA2.md` index and raised the permissions and secrets claim from 8 to 10 after the clean history and tree scans. The seven criteria now total 100.
+- Linked the documented seed rule to the Step 3 environment finding and the replay rule to the team's blocked merge. Clarified the zero model budget in the README.
+
+**Rejected:**
+
+- Using the original source package's secret scans or CI runs as evidence for the team repository.
+- Treating the pre-release scan as proof of a later tagged tree. Release verification identifies and scans the final SHA separately.
+
+**Validation:**
+
+- Fresh clone on Node.js 24.11.0. Installation and all four quality commands passed, including 24/24 tests.
+- SQLite probes confirmed idempotent seeding, ownership and pending-work guards, write-lock behavior, rollback after a controlled audit insert failure and identical replay after reopening.
+- Gitleaks history and tracked-tree scans exited 0 with zero findings. The [evidence record](docs/evidence/thinh-sqlite-and-gitleaks.md) gives the SHA, commands, tool version and scope.
+- Confirmed active main rules and PR #8's red/green results against GitHub. Reviewed the blocked merge screenshot and verified that the break and repair changed only `src/app.ts`.

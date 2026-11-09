@@ -218,7 +218,7 @@ The PA#2 implementation does not integrate a model provider.
 
 - Active model provider: none
 - Model API key: none
-- Model spending: USD 0
+- Model budget and actual spending: USD 0 per lab and USD 0 total
 - Model API calls: 0
 - Production authentication: not implemented
 
