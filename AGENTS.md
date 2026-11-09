@@ -15,6 +15,7 @@ Read `docs/contract/publish-lab.md` before source changes. Use RFC 9457 errors.
 Keep class ownership checks inside the publication transaction, including retries.
 Persist the receipt, marks and audit event atomically. Test through real HTTP.
 Compare SQLite assertion values, not row prototypes ([AI-LOG A03](docs/history/AI-LOG-baseline.md#a03---diagnose-a-test-harness-defect-rather-than-mislabel-it-an-api-defect)).
+Leave `DATABASE_PATH` unset to test the default seed path. An empty value created temporary SQLite storage during [Thịnh's Step 3 check](AI-LOG.md).
 Record decisions and actual Changed / Rejected findings in `AI-LOG.md`.
 Use PRs after main protection; never bypass a required check. Follow `docs/permissions.md`.
 
@@ -24,5 +25,5 @@ Use PRs after main protection; never bypass a required check. Follow `docs/permi
 - Make real model calls in unit/contract tests. PA2 model spending is disabled (USD 0).
 - Edit a test, eval datum or label to make an implementation pass. A real contract change needs its own explained commit and matching tests.
 - Treat authentication as class ownership, or skip ownership on a replay ([AI-LOG A07](docs/history/AI-LOG-baseline.md#a07---probe-class-isolation-independently-of-a-status-regression)).
-- Use an in-memory publication flag or change a replay's stored receipt/status ([AI-LOG A06](docs/history/AI-LOG-baseline.md#a06---prove-a-real-merge-refusal-for-a-replay-regression)).
+- Use an in-memory publication flag or change a replay's stored receipt/status ([AI-LOG A06](docs/history/AI-LOG-baseline.md#a06---prove-a-real-merge-refusal-for-a-replay-regression), [team replay experiment](docs/evidence/red-green/experiment-notes.md)).
 - Run student C++ outside the future isolated judge, or publish with unresolved human reviews.
