@@ -239,7 +239,7 @@ Permissions and secret-handling requirements are documented in [docs/permissions
 | `PA2.md`                    | PA#2 implementation evidence           |
 | `SELF_ASSESSMENT_REPORT.md` | Evaluation against assignment criteria |
 
-The evidence and self-assessment documents record the completed PA#2 verification. Release-specific SHA, CI and ZIP evidence is finalized against the final release tag.
+The [dated evidence](docs/evidence/thinh-sqlite-and-gitleaks.md) distinguishes Thịnh's baseline SQLite/secret scan from Công's candidate-release Gitleaks scan and ZIP verification. The exact final commit SHA, tag CI, new scan results and archive verification are recorded in `.git/pa2-release-verification.json` inside the submitted ZIP.
 
 ## 11. PA#2 Submission
 
