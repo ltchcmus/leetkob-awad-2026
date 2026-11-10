@@ -450,3 +450,41 @@ Fix the SQLite regression on `fix/pa2-final-review` after Hậu's test commit `4
 - The exclusive-lock regression now passes with HTTP 503, `Retry-After: 1`, zero partial writes and a successful HTTP 200 retry. The existing write contention and audit rollback tests passed too.
 - Lint and format passed. The full suite reported 25 passes and 1 failure. The raw-path test still receives 200 where it expects 404.
 - Type checking reported TS2379 at `test/publish.contract.test.ts:103`. The raw request helper passes `incoming.statusCode`, which can be `undefined`, to `ResponseInit.status`. This is part of the HTTP handoff.
+
+## 2026-11-10 — Repair raw-path routing and update final-review evidence
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, Git, GitHub CLI, PowerShell, Node.js 24.11.0 through `npx`, npm and the native Node test runner.
+
+**Asked for:**
+
+Continue Hậu's second final-review turn after Thịnh's SQLite repair: pull the shared branch, reject raw dot-segment paths before URL normalization, update the contract coverage map and self-assessment with the repair work, actual responsibilities, uncompleted scope and the seven-criterion total, run all four quality checks, then push the handoff for Công without changing test expectations.
+
+**Kept:**
+
+- The canonical route and safe unknown-path behavior from contract §§1-2.
+- Both regression tests and their original expected 404 and 503 responses.
+- Thịnh's focused SQLite access-lock repair in commit `51ce092`.
+- The evidence-backed seven-criterion total of 100/100 and explicit zero-provider, zero-model-call, USD 0 boundary.
+
+**Changed:**
+
+- Validated the raw request path against the canonical route before constructing `URL`, preventing dot-segment normalization from turning an invalid target into another lab's valid route.
+- Narrowed the raw test helper's optional HTTP status before constructing a `Response`; no expected value changed.
+- Expanded the coverage map to 26 tests, including raw dot-segment routing and an exclusive lock during the initial access check.
+- Updated the self-assessment with evidence-backed actual responsibilities, 26/26 final-review coverage and a `What we did not manage` section.
+
+**Rejected:**
+
+- Changing or skipping either regression test to obtain a green run.
+- Parsing with `new URL()` before checking the raw request path.
+- Claiming final-review PR CI, merge, retagging, final-SHA scan, replacement ZIP or Classroom resubmission before each event occurs.
+
+**Validation:**
+
+- Pulled `fix/pa2-final-review` with `--ff-only`; it was current at Thịnh's `51ce092` handoff.
+- On Node.js 24.11.0, lint and typecheck passed and all 26 tests passed with zero failures.
+- The first format check identified only `SELF_ASSESSMENT_REPORT.md`; Prettier formatted that file before the complete gate was rerun.
+- The complete rerun passed lint, format, typecheck and all 26 tests on Node.js 24.11.0.
+- No application behavior outside raw-route rejection was intentionally changed.

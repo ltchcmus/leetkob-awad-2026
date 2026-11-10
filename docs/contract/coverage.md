@@ -1,6 +1,6 @@
 # Contract coverage map
 
-The HTTP suite uses an actual native HTTP server, an isolated file-backed SQLite database per test, a controlled server clock and synthetic principals. Expected statuses, problem types and body fields are asserted independently of the implementation's problem table. Authentication also has a unit test for the standalone demo adapter. Contract tests run inside the required `tests` CI check via `npm test`.
+The 26-test suite uses an actual native HTTP server, an isolated file-backed SQLite database per test, a controlled server clock and synthetic principals. It contains one standalone-authentication test and 25 HTTP contract tests. Expected statuses, problem types and body fields are asserted independently of the implementation's problem table. Contract tests run inside the required `tests` CI check via `npm test`.
 
 | Contract clause                | Test name or distinctive name fragment     | Assertions                                                                                                                    |
 | ------------------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -12,6 +12,7 @@ The HTTP suite uses an actual native HTTP server, an isolated file-backed SQLite
 | §4 replay authorization        | `published receipts do not bypass revoked` | Revoked TA and foreign TA denied after publication; existing audit remains single                                             |
 | §4 transactional authorization | `ownership is checked again`               | Revocation between initial access and publication prevents all writes                                                         |
 | §§1-2 invalid route            | `invalid IDs, trailing slash`              | Canonical positive-safe-integer rules; unknown route does not echo query secrets                                              |
+| §§1-2 raw invalid route        | `raw dot-segment path`                     | Raw `/v1/labs/2/../1/publish` is rejected before URL normalization; safe `/v1` instance and no writes                         |
 | §2 405                         | `wrong method`                             | GET/PUT/DELETE, RFC 9457 and Allow POST                                                                                       |
 | §2 400 syntax                  | `malformed or empty JSON`                  | Empty/malformed/non-JSON numeric token cases, safe body and no writes                                                         |
 | §§2,4 400 fields               | `non-object JSON and every query name`     | Null, array, number, boolean, string; whole-body JSON Pointer, query parameter names, aggregation and deduplication           |
@@ -24,6 +25,7 @@ The HTTP suite uses an actual native HTTP server, an isolated file-backed SQLite
 | §4 concurrent retries          | `24 simultaneous requests`                 | All successful bodies equal, exactly one original, one publication, two mark snapshots, one audit                             |
 | §4 persistence                 | `independent reopened store`               | A separate database connection replays persisted receipt with changed actor/clock                                             |
 | §§2,4 503                      | `write contention`                         | Held write transaction produces 503/Retry-After and zero writes; release allows retry                                         |
+| §§2,4 503 access lock          | `exclusive lock during access check`       | `BEGIN EXCLUSIVE` during initial ownership lookup produces 503/Retry-After, no writes and a successful retry after release    |
 | §§2,4 rollback/500             | `audit failure rolls back`                 | Failure after publication/marks inserts leaves all three tables empty; generic detail; retry succeeds                         |
 | §2 unexpected 500              | `identity adapter exception`               | Secret-bearing internal exception is not disclosed; no writes                                                                 |
 | §4 replay input checks         | `invalid replay input remains invalid`     | Existing publication does not bypass malformed JSON or media checks                                                           |

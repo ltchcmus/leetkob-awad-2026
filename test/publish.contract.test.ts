@@ -93,6 +93,8 @@ async function fixture(t: TestContext, override: Partial<AppOptions> = {}) {
           const chunks: Buffer[] = [];
           incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
           incoming.on("end", () => {
+            const status = incoming.statusCode;
+            assert.ok(status !== undefined);
             const headers = new Headers();
             for (const [name, value] of Object.entries(incoming.headers)) {
               if (Array.isArray(value))
@@ -101,7 +103,7 @@ async function fixture(t: TestContext, override: Partial<AppOptions> = {}) {
             }
             resolve(
               new Response(Buffer.concat(chunks).toString("utf8"), {
-                status: incoming.statusCode,
+                status,
                 headers,
               }),
             );

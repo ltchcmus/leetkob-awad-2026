@@ -84,12 +84,15 @@ export function createApp(options: AppOptions): Server {
   return createServer((request, response) => {
     let instance = "/v1";
     async function handle(): Promise<void> {
-      const url = new URL(request.url ?? "/", "http://localhost");
-      const match = /^\/v1\/labs\/([1-9][0-9]*)\/publish$/.exec(url.pathname);
+      const target = request.url ?? "/";
+      const queryStart = target.indexOf("?");
+      const rawPath = queryStart === -1 ? target : target.slice(0, queryStart);
+      const match = /^\/v1\/labs\/([1-9][0-9]*)\/publish$/.exec(rawPath);
       const labId = Number(match?.[1]);
       if (!match || !Number.isSafeInteger(labId))
         throw new Problem("not-found");
       instance = `/v1/labs/${labId}/publish`;
+      const url = new URL(target, "http://localhost");
       if (request.method !== "POST") throw new Problem("method-not-allowed");
       const principal = options.authenticate(request);
       if (!principal) throw new Problem("authentication-required");
