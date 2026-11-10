@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
+import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { once } from "node:events";
@@ -74,7 +75,45 @@ async function fixture(t: TestContext, override: Partial<AppOptions> = {}) {
         ? {}
         : { body: options.body ?? "{}" }),
     });
-  return { repository, request, path, base };
+  const rawRequest = (rawPath: string) =>
+    new Promise<Response>((resolve, reject) => {
+      const outgoing = httpRequest(
+        {
+          hostname: "127.0.0.1",
+          port: address.port,
+          path: rawPath,
+          method: "POST",
+          headers: {
+            Authorization: "Bearer own",
+            "Content-Type": "application/json",
+            "Content-Length": "2",
+          },
+        },
+        (incoming) => {
+          const chunks: Buffer[] = [];
+          incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
+          incoming.on("end", () => {
+            const status = incoming.statusCode;
+            assert.ok(status !== undefined);
+            const headers = new Headers();
+            for (const [name, value] of Object.entries(incoming.headers)) {
+              if (Array.isArray(value))
+                for (const item of value) headers.append(name, item);
+              else if (value !== undefined) headers.set(name, value);
+            }
+            resolve(
+              new Response(Buffer.concat(chunks).toString("utf8"), {
+                status,
+                headers,
+              }),
+            );
+          });
+        },
+      );
+      outgoing.on("error", reject);
+      outgoing.end("{}");
+    });
+  return { repository, request, rawRequest, path, base };
 }
 
 async function problem(
@@ -280,6 +319,18 @@ test("§§1-2: invalid IDs, trailing slash and unknown routes are safe 404 probl
   ]) {
     await problem(await request({ path }), 404, "not-found", "Not found");
   }
+  noPublication(repository);
+});
+
+test("§§1-2: raw dot-segment path is a safe 404 and cannot publish a different lab", async (t) => {
+  const { rawRequest, repository } = await fixture(t);
+  const result = await problem(
+    await rawRequest("/v1/labs/2/../1/publish"),
+    404,
+    "not-found",
+    "Not found",
+  );
+  assert.equal(result.instance, "/v1");
   noPublication(repository);
 });
 
@@ -510,6 +561,28 @@ test("§§2,4: write contention is safe 503 with Retry-After; retry succeeds aft
     other.db.exec("ROLLBACK");
     other.close();
   }
+  assert.equal((await request()).status, 200);
+});
+
+test("§§2,4: exclusive lock during access check is safe 503 with no partial write and retry succeeds", async (t) => {
+  const { request, repository, path } = await fixture(t);
+  const other = new PublicationRepository(path);
+  try {
+    other.db.exec("BEGIN EXCLUSIVE");
+    const response = await request();
+    await problem(
+      response,
+      503,
+      "publication-unavailable",
+      "Publication unavailable",
+    );
+    assert.equal(response.headers.get("retry-after"), "1");
+    noPublication(other);
+  } finally {
+    other.db.exec("ROLLBACK");
+    other.close();
+  }
+  noPublication(repository);
   assert.equal((await request()).status, 200);
 });
 

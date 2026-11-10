@@ -382,3 +382,150 @@ Verify SQLite and the publish transaction after Step 8, scan the team repository
 - SQLite probes confirmed idempotent seeding, ownership and pending-work guards, write-lock behavior, rollback after a controlled audit insert failure and identical replay after reopening.
 - Gitleaks history and tracked-tree scans exited 0 with zero findings. The [evidence record](docs/evidence/thinh-sqlite-and-gitleaks.md) gives the SHA, commands, tool version and scope.
 - Confirmed active main rules and PR #8's red/green results against GitHub. Reviewed the blocked merge screenshot and verified that the break and repair changed only `src/app.ts`.
+
+## 2026-11-10 — Add final-review HTTP regression tests
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, Git, PowerShell, Node.js 24.11.0 through `npx`, npm and the native Node test runner.
+
+**Asked for:**
+
+On the shared `fix/pa2-final-review` branch, add two regression tests before implementation changes: an exclusive SQLite lock must produce the contract's 503 `publication-unavailable` response with `Retry-After: 1`, no partial writes and a successful retry after release; and the raw dot-segment path `/v1/labs/2/../1/publish` must produce a safe 404 `not-found` response with `instance=/v1` and no database writes. Keep the contract expectations unchanged, record the current 500 and 200 failures, then commit and push the red tests for Thinh's handoff.
+
+**Kept:**
+
+- Contract §§1-2 route requirements: only the canonical publish path is valid, unknown paths use `instance=/v1`, and failures leave publication state unchanged.
+- Contract §§2 and 4 contention requirements: SQLite locks return 503 `publication-unavailable` with `Retry-After: 1`, no partial state and a safe retry after lock release.
+- Existing expected statuses, problem types, response headers and persistence assertions.
+
+**Changed:**
+
+- Added a minimal raw HTTP request helper so the client sends dot segments without URL normalization.
+- Added `§§1-2: raw dot-segment path is a safe 404 and cannot publish a different lab`.
+- Added `§§2,4: exclusive lock during access check is safe 503 with no partial write and retry succeeds` using `BEGIN EXCLUSIVE` on a second SQLite connection.
+
+**Rejected:**
+
+- Changing the expected 404 to the implementation's current 200 response.
+- Changing the expected 503 to the implementation's current 500 response.
+- Fixing `src/app.ts` or `src/repository.ts` in the dedicated red-test change.
+- Weakening or skipping either regression to make the suite pass.
+
+**Validation:**
+
+- Pulled `fix/pa2-final-review` with `--ff-only`; it was already current at `2f6e785` before editing.
+- The machine-default Node.js 22.15.1 could not execute the TypeScript tests, so it is not treated as product evidence.
+- A full run with Node.js 24.11.0 discovered 26 tests: 24 passed and exactly the two new regressions failed.
+- The raw dot-segment regression expected 404 and observed 200.
+- The exclusive-lock regression expected 503 and observed 500.
+- No application, repository, contract or expected-value change was made.
+
+## 2026-11-10 — Handle SQLite locks during the TA access check
+
+**Owner:** Nguyễn Hưng Thịnh — 23120200
+
+**Tool:** OpenAI Codex, Git, PowerShell, Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Fix the SQLite regression on `fix/pa2-final-review` after Hậu's test commit `4de49b1`. An exclusive lock during TA ownership lookup must produce HTTP 503 with `Retry-After: 1`. The same request should succeed after lock release.
+
+**Kept:**
+
+- The contract's ownership check order, rollback before error translation and existing tests.
+
+**Changed:**
+
+- Extracted one mapper for SQLite `BUSY` (5) and `LOCKED` (6). Both `assertAccess()` and `publish()` use it to raise `publication-unavailable`.
+- Applied the mapper at the initial ownership read, where `BEGIN EXCLUSIVE` can prevent SQLite from reading before the publish transaction starts.
+
+**Rejected:**
+
+- Mapping unrelated database or application failures to a retryable 503. The mapper rethrows other errors for their existing handling.
+
+**Validation:**
+
+- Reproduced both failures at `4de49b1`. The exclusive lock returned 500 and the raw dot-segment path returned 200.
+- The exclusive-lock regression now passes with HTTP 503, `Retry-After: 1`, zero partial writes and a successful HTTP 200 retry. The existing write contention and audit rollback tests passed too.
+- Lint and format passed. The full suite reported 25 passes and 1 failure. The raw-path test still receives 200 where it expects 404.
+- Type checking reported TS2379 at `test/publish.contract.test.ts:103`. The raw request helper passes `incoming.statusCode`, which can be `undefined`, to `ResponseInit.status`. This is part of the HTTP handoff.
+
+## 2026-11-10 — Repair raw-path routing and update final-review evidence
+
+**Owner:** Nguyen Phuc Hau — 23120252
+
+**Tool:** OpenAI Codex, Git, GitHub CLI, PowerShell, Node.js 24.11.0 through `npx`, npm and the native Node test runner.
+
+**Asked for:**
+
+Continue Hậu's second final-review turn after Thịnh's SQLite repair: pull the shared branch, reject raw dot-segment paths before URL normalization, update the contract coverage map and self-assessment with the repair work, actual responsibilities, uncompleted scope and the seven-criterion total, run all four quality checks, then push the handoff for Công without changing test expectations.
+
+**Kept:**
+
+- The canonical route and safe unknown-path behavior from contract §§1-2.
+- Both regression tests and their original expected 404 and 503 responses.
+- Thịnh's focused SQLite access-lock repair in commit `51ce092`.
+- The evidence-backed seven-criterion total of 100/100 and explicit zero-provider, zero-model-call, USD 0 boundary.
+
+**Changed:**
+
+- Validated the raw request path against the canonical route before constructing `URL`, preventing dot-segment normalization from turning an invalid target into another lab's valid route.
+- Narrowed the raw test helper's optional HTTP status before constructing a `Response`; no expected value changed.
+- Expanded the coverage map to 26 tests, including raw dot-segment routing and an exclusive lock during the initial access check.
+- Updated the self-assessment with evidence-backed actual responsibilities, 26/26 final-review coverage and a `What we did not manage` section.
+- Opened [final-review PR #12](https://github.com/ltchcmus/leetkob-awad-2026/pull/12) against `main` after pushing the repair.
+
+**Rejected:**
+
+- Changing or skipping either regression test to obtain a green run.
+- Parsing with `new URL()` before checking the raw request path.
+- Claiming merge, retagging, final-SHA scan, replacement ZIP or Classroom resubmission before each event occurs.
+
+**Validation:**
+
+- Pulled `fix/pa2-final-review` with `--ff-only`; it was current at Thịnh's `51ce092` handoff.
+- On Node.js 24.11.0, lint and typecheck passed and all 26 tests passed with zero failures.
+- The first format check identified only `SELF_ASSESSMENT_REPORT.md`; Prettier formatted that file before the complete gate was rerun.
+- The complete rerun passed lint, format, typecheck and all 26 tests on Node.js 24.11.0.
+- [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the required lint, format, typecheck and tests jobs for repair commit `0fd6107`.
+- No application behavior outside raw-route rejection was intentionally changed.
+
+## 2026-11-10 — Final-review documentation and release preparation
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** ChatGPT, Git, PowerShell, Node.js 24.11.0, npm and Prettier.
+
+**Asked for:**
+
+Review the final changes from Hậu and Thịnh, verify the quality checks, update README.md and PA2.md, and prepare the final-review pull request for release.
+
+**Kept:**
+
+- The existing HTTP contract, regression tests and implementation repairs.
+- PR #8 as evidence of the controlled CI red/green experiment.
+- The separate contributions and AI-LOG records of Hậu and Thịnh.
+- The existing pa2 release tag until the final changes are merged and verified.
+
+**Changed:**
+
+- Updated README.md installation instructions, CI ruleset documentation, PR #8 evidence and test count from 24 to 26.
+- Updated PA2.md with PR #12, SQLite access-lock and raw-path repairs, related commits and test evidence.
+- Clarified that the replacement release ZIP requires verification against the updated pa2 tag.
+- Added this AI-LOG entry describing Công's final-review documentation work.
+
+**Rejected:**
+
+- Changing or weakening test expectations to obtain passing checks.
+- Replacing the existing red/green evidence.
+- Claiming that the release tag, final scan, ZIP verification or Classroom resubmission was complete before performing those steps.
+
+**Validation:**
+
+- Pulled fix/pa2-final-review at commit 637e3a8.
+- On Node.js 24.11.0, lint, format, typecheck and all 26 tests passed locally before the documentation updates.
+- Verified that the SQLite exclusive-lock and raw dot-segment regression tests passed.
+- README.md and PA2.md passed Prettier format checks and git diff --check after editing.
+- PR #12: https://github.com/ltchcmus/leetkob-awad-2026/pull/12
+- Final documentation commit, PR merge, updated release tag and replacement ZIP remain pending.
