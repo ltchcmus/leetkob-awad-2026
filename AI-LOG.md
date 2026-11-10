@@ -490,3 +490,42 @@ Continue Hậu's second final-review turn after Thịnh's SQLite repair: pull th
 - The complete rerun passed lint, format, typecheck and all 26 tests on Node.js 24.11.0.
 - [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the required lint, format, typecheck and tests jobs for repair commit `0fd6107`.
 - No application behavior outside raw-route rejection was intentionally changed.
+
+## 2026-11-10 — Final-review documentation and release preparation
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** ChatGPT, Git, PowerShell, Node.js 24.11.0, npm and Prettier.
+
+**Asked for:**
+
+Review the final changes from Hậu and Thịnh, verify the quality checks, update README.md and PA2.md, and prepare the final-review pull request for release.
+
+**Kept:**
+
+- The existing HTTP contract, regression tests and implementation repairs.
+- PR #8 as evidence of the controlled CI red/green experiment.
+- The separate contributions and AI-LOG records of Hậu and Thịnh.
+- The existing pa2 release tag until the final changes are merged and verified.
+
+**Changed:**
+
+- Updated README.md installation instructions, CI ruleset documentation, PR #8 evidence and test count from 24 to 26.
+- Updated PA2.md with PR #12, SQLite access-lock and raw-path repairs, related commits and test evidence.
+- Clarified that the replacement release ZIP requires verification against the updated pa2 tag.
+- Added this AI-LOG entry describing Công's final-review documentation work.
+
+**Rejected:**
+
+- Changing or weakening test expectations to obtain passing checks.
+- Replacing the existing red/green evidence.
+- Claiming that the release tag, final scan, ZIP verification or Classroom resubmission was complete before performing those steps.
+
+**Validation:**
+
+- Pulled fix/pa2-final-review at commit 637e3a8.
+- On Node.js 24.11.0, lint, format, typecheck and all 26 tests passed locally before the documentation updates.
+- Verified that the SQLite exclusive-lock and raw dot-segment regression tests passed.
+- README.md and PA2.md passed Prettier format checks and git diff --check after editing.
+- PR #12: https://github.com/ltchcmus/leetkob-awad-2026/pull/12
+- Final documentation commit, PR merge, updated release tag and replacement ZIP remain pending.

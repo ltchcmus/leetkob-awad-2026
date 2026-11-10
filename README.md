@@ -36,6 +36,7 @@ Clone the team repository:
 ```bash
 git clone https://github.com/ltchcmus/leetkob-awad-2026.git
 cd leetkob-awad-2026
+git checkout pa2
 ```
 
 Use Node.js 24.11.0 and install dependencies:
@@ -61,7 +62,7 @@ npm test
 | typecheck | Validate TypeScript types                      |
 | tests     | Execute authentication and HTTP contract tests |
 
-The test suite contains 24 tests covering authentication, authorization, publishing behavior, concurrency, persistence and error handling.
+The test suite contains 26 tests covering authentication, authorization, publishing behavior, concurrency, persistence and error handling.
 
 Each quality check must exit successfully before its corresponding pull request is merged.
 
@@ -201,16 +202,16 @@ Detailed requirements and expected behavior are documented in:
 
 Each team member works on a separate task branch and submits changes through a pull request.
 
-The CI workflow is designed to execute four quality checks:
+GitHub Actions executes four required quality checks on pull requests to main, pushes to main, and the pa2 tag:
 
 1. lint
 2. format
 3. typecheck
 4. tests
 
-Required status checks and branch protection are configured as part of the PA#2 infrastructure work.
+The active `main` branch ruleset requires pull requests, up-to-date branches and passing `lint`, `format`, `typecheck` and `tests` checks before merging. Force pushes and branch deletion are blocked.
 
-Once branch protection is enabled, changes to `main` must satisfy the required checks before merging.
+[PR #8](https://github.com/ltchcmus/leetkob-awad-2026/pull/8) demonstrates CI enforcement: an intentional HTTP replay regression failed the required tests check and blocked merging. After restoring the correct HTTP 200 response, all checks passed and the PR was merged.
 
 ## 9. Security and Resource Limits
 
@@ -238,24 +239,24 @@ Permissions and secret-handling requirements are documented in [docs/permissions
 | `PA2.md`                    | PA#2 implementation evidence           |
 | `SELF_ASSESSMENT_REPORT.md` | Evaluation against assignment criteria |
 
-The evidence and self-assessment documents are finalized during the submission preparation phase.
+The evidence and self-assessment documents record the completed PA#2 verification. Release-specific SHA, CI and ZIP evidence is finalized against the final release tag.
 
 ## 11. PA#2 Submission
 
-The PA#2 release uses the Git tag `pa2`.
+The PA#2 release uses the Git tag `pa2`. The final-review fixes will be included when this tag is updated to the final reviewed commit after merging.
 
-After the release tag has been published, it can be checked out using:
+After the final release tag has been updated and verified, it can be checked out using:
 
 ```bash
 git fetch --tags
 git checkout pa2
 ```
 
-The final submission archive includes the repository history and required documentation while excluding `node_modules`, local databases and secrets.
+The final submission archive must include the repository history and required documentation while excluding `node_modules`, local databases and secrets.
 
 **Submission deadline:** 11 November 2026, 22:00 (Asia/Ho_Chi_Minh).
 
-The final archive and release are prepared after CI verification and independent ZIP validation.
+The final archive will be prepared after CI verification and independently checked against the release tag before submission.
 
 ## 12. Future Development
 

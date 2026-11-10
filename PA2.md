@@ -19,4 +19,19 @@ Main requires a pull request and four up-to-date checks. The rule blocks force p
 
 The [contract](docs/contract/publish-lab.md) specifies `POST /v1/labs/{labId}/publish` and the [coverage map](docs/contract/coverage.md) ties its requirements to the executable tests. The [README](README.md) gives the setup and four commands for a fresh checkout on Node.js 24.11.0.
 
-The submission ZIP is `23120200-23120222-23120252_100.zip`. It includes the team repository's `.git` history and required documents. In the extracted repository, `.git/pa2-release-verification.json` records the final commit SHA, direct tag CI URL and release scan details. The file lives alongside the Git metadata so the run can be recorded after pushing the tag.
+## Final-review regression repairs
+
+[PR #12](https://github.com/ltchcmus/leetkob-awad-2026/pull/12) addresses two additional regressions discovered during final review:
+
+1. **SQLite access contention:** An exclusive database lock during the initial TA ownership check previously returned HTTP 500. Commit [`51ce092`](https://github.com/ltchcmus/leetkob-awad-2026/commit/51ce092) maps SQLite BUSY/LOCKED failures to HTTP 503 `publication-unavailable`, with `Retry-After: 1`, no partial writes and successful retry after lock release.
+2. **Non-canonical HTTP paths:** A raw request path containing `/../` could be normalized into a valid route. Commit [`0fd6107`](https://github.com/ltchcmus/leetkob-awad-2026/commit/0fd6107) validates the raw path before URL parsing, preserving the required HTTP 404 response.
+
+The regression tests were introduced separately in commit [`4de49b1`](https://github.com/ltchcmus/leetkob-awad-2026/commit/4de49b1), before the implementation repairs. Expected responses were not weakened or changed.
+
+**Verification:** Node.js 24.11.0; lint, format, typecheck and all 26 tests passed locally after both repairs. [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the four required checks for commit `0fd6107`. The final documentation commit and release tag require their own verification before submission.
+
+## Submission archive
+
+The original submission archive was `23120200-23120222-23120252_100.zip`. It represents the earlier `pa2` release and does not establish verification of the new repairs.
+
+The replacement archive must be generated from the updated `pa2` tag after PR #12 is merged and all required checks pass. It must include the complete `.git` history and required documentation, while excluding `node_modules`, local databases and secrets. The release-verification metadata must record the actual final commit SHA, matching tag CI run and Gitleaks scan results. The replacement ZIP must pass independent verification before submission.
