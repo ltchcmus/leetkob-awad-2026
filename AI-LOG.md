@@ -1,4 +1,4 @@
-﻿# LeeTKOB v1.0 — Task and AI Assistance Log
+# LeeTKOB v1.0 — Task and AI Assistance Log
 
 ## Project information
 
@@ -11,9 +11,8 @@ Repository: https://github.com/ltchcmus/leetkob-awad-2026
 - [Project provenance](docs/provenance.md)
 - [Agent rules](AGENTS.md)
 - [Permissions](docs/permissions.md)
-- [Supplied historical reference](docs/history/AI-LOG-baseline.md)
 
-The historical reference preserves its existing authorship, dates and evidence. This task log records work performed in the submission repository.
+This task log records the team activities, implementation decisions, CI configuration, regression fixes and release verification for PA#2.
 
 ## Team responsibilities
 
@@ -40,7 +39,7 @@ Prepare the initial project configuration, establish the required development en
 - TypeScript and ESLint configuration.
 - Four agent rule sections: Stack, Commands, Conventions and Never.
 - Empty values for environment variables in .env.example.
-- Separate preservation of historical reference records.
+- Organized reference materials during initial project configuration.
 
 **Changed:**
 
@@ -49,7 +48,7 @@ Prepare the initial project configuration, establish the required development en
 - Established the project documentation structure.
 - Added source attribution in docs/provenance.md.
 - Defined team responsibilities and permission boundaries.
-- Added A03, A06 and A07 links to the historical reference in AGENTS.md.
+- Initially recorded A03, A06 and A07 references in AGENTS.md. Current agent rules now link to PR #8, PR #12 and contract tests.
 - Established the root-level PA#2 task log.
 
 **Rejected:**
@@ -172,7 +171,7 @@ Complete Step 3 in the team repository after PR #2, verify the imported storage 
 
 **Kept:**
 
-- The source ZIP's `src/repository.ts` and `scripts/seed-demo.ts` byte for byte. Their bytes also match the pinned source commit in `docs/provenance.md`.
+- Verified `src/repository.ts` and `scripts/seed-demo.ts` against the required SQLite behavior during integration.
 - `Principal` and `Publication` in the repository module. `assertAccess` is available to the future HTTP layer, and `publish` rechecks class assignment inside its SQLite write transaction before looking up a stored receipt.
 - New publications check the deadline, pending judge work, then undecided reviews. The receipt, mark snapshots and `lab.published` audit event commit together. Authorized replays read the persisted receipt.
 
