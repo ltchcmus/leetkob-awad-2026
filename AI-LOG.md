@@ -16,11 +16,11 @@ This task log records the team activities, implementation decisions, CI configur
 
 ## Team responsibilities
 
-| Member            | Student ID | Responsibilities                                                                |
-| ----------------- | ---------- | ------------------------------------------------------------------------------- |
-| Le Thanh Cong     | 23120222   | Project configuration, server integration, CI, branch protection and release    |
-| Nguyen Hung Thinh | 23120200   | SQLite, publication transactions, persistence, secret scan and ZIP verification |
-| Nguyen Phuc Hau   | 23120252   | HTTP contract, authentication, tests, coverage and self-assessment              |
+| Member            | Student ID | Responsibilities                                                                           |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------------ |
+| Le Thanh Cong     | 23120222   | Infrastructure, CI, release tag, final Gitleaks scan and submission ZIP verification       |
+| Nguyen Hung Thinh | 23120200   | SQLite transactions and persistence, baseline Gitleaks scan, access-lock regression repair |
+| Nguyen Phuc Hau   | 23120252   | HTTP contract, authentication, tests, coverage and self-assessment                         |
 
 ## 2026-11-08 — Initial project configuration
 
@@ -528,3 +528,38 @@ Review the final changes from Hậu and Thịnh, verify the quality checks, upda
 - README.md and PA2.md passed Prettier format checks and git diff --check after editing.
 - PR #12: https://github.com/ltchcmus/leetkob-awad-2026/pull/12
 - Final documentation commit, PR merge, updated release tag and replacement ZIP remain pending.
+
+## 2026-11-11 — Verify the candidate release scan and extracted ZIP
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** ChatGPT, Windows 11, PowerShell, Git, Node.js 24.11.0, npm, Gitleaks 8.30.1 and GitHub Actions.
+
+**Asked for:**
+
+Perform the final secret scan and ZIP verification previously assigned to Thịnh, reconcile the evidence with Thịnh's earlier baseline scan, and prepare a traceable PA#2 submission.
+
+**Kept:**
+
+- Thịnh's independent 9 November SQLite checks and baseline Gitleaks results for commit `bc5e69a` (24-test suite); those remain historical evidence, not the final release scan.
+- The protected-main workflow, PR #8 red/green experiment and PR #12 regression repairs.
+- The original application source, HTTP contract, test expectations and final test count of 26.
+
+**Changed:**
+
+- Updated the release evidence to distinguish Thịnh's baseline scan from Công's candidate-release scan.
+- At candidate release commit `08243602bf3a39d13d40d23b502539d7eb807c81`, updated annotated tag `pa2` and checked the tagged CI [Quality run #27](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42857411211).
+- Stored the scan, tag, CI and extracted-archive verification record in `.git/pa2-release-verification.json` inside the candidate ZIP.
+
+**Rejected:**
+
+- Attributing Công's candidate-release scan or ZIP verification to Thịnh.
+- Treating Thịnh's 9 November baseline SHA and 24-test result as the 11 November release SHA and 26-test result.
+- Claiming that a later documentation commit has already been scanned or tagged. Any new commit requires an updated tag, matching CI and new scan evidence.
+
+**Validation:**
+
+- Gitleaks 8.30.1: `gitleaks git --log-opts="--all"` reported 21 commit patches scanned and 0 findings; source scan of the `pa2` tracked-tree snapshot reported 0 findings. Both exit codes were `0`.
+- A fresh clone at `0824360` was checked out at the annotated `pa2` tag. The candidate ZIP included `.git/`, code, tests, Markdown evidence and release metadata without `node_modules/` or local databases.
+- After extracting the candidate ZIP, `git fsck --full` passed; `npm ci`, lint, format check, typecheck and all 26 tests passed. Git status was clean. The final ZIP was extracted again and its Git objects, tag, commit and metadata verified.
+- This entry records the completed verification of **candidate SHA `0824360`**. If documentation is committed after that SHA, the final release SHA and its new Gitleaks/CI/ZIP evidence are recorded separately in the new archive's `.git/pa2-release-verification.json`.

@@ -1,7 +1,7 @@
-# SQLite and Gitleaks verification
+# SQLite and Gitleaks verification — two release stages
 
-- **Owner:** Nguyễn Hưng Thịnh (23120200)
-- **Date:** 9 November 2026, Vietnam time
+- **Baseline owner:** Nguyễn Hưng Thịnh (23120200)
+- **Baseline date:** 9 November 2026, Vietnam time
 - **Repository:** [ltchcmus/leetkob-awad-2026](https://github.com/ltchcmus/leetkob-awad-2026)
   **Verified baseline:** [`bc5e69a8eca6fe3ffa1e9219b75d7f5fb345c038`](https://github.com/ltchcmus/leetkob-awad-2026/commit/bc5e69a8eca6fe3ffa1e9219b75d7f5fb345c038)
 
@@ -20,7 +20,7 @@ A fresh clone at the baseline above used Node.js 24.11.0 and npm 11.6.1. `npm ci
 
 The storage probes ran against a disposable copy of the seeded database. The checked-in HTTP suite supplies separate evidence for status codes, headers and concurrent requests.
 
-## Secret scanning
+## Baseline secret scanning — Thịnh, 9 November
 
 Gitleaks **8.30.1** ran on 9 November 2026 at 21:48 +07:00. The Git scan traversed all refs in the fresh clone of the team repository. Git listed 24 reachable commits, and Gitleaks reported 14 commit patches scanned. The directory scan used a `git archive` snapshot of all 38 tracked files at the exact baseline SHA above.
 
@@ -30,3 +30,18 @@ Gitleaks **8.30.1** ran on 9 November 2026 at 21:48 +07:00. The Git scan travers
 | Tracked snapshot  | `gitleaks dir <snapshot> --redact --report-format json --report-path tree.json`            |    0 |        0 |
 
 Both JSON reports contained empty finding arrays. **Issues to resolve: none found.** The history and tracked snapshot were each scanned directly. The submission ZIP's Git metadata identifies the final tag and its separate release scans.
+
+## Candidate-release secret scan and ZIP verification — Công, 11 November
+
+**Performed by:** Lê Thành Công (23120222). This is a **second, later scan**, not a replacement for Thịnh's baseline results above.
+
+**Candidate commit:** [`08243602bf3a39d13d40d23b502539d7eb807c81`](https://github.com/ltchcmus/leetkob-awad-2026/commit/08243602bf3a39d13d40d23b502539d7eb807c81) (PR #13 merged). **Candidate tag:** annotated `pa2`, tag object `a918d07276f8f288ef14ea1ec3d7436221f12715` at that time.
+
+| Scope                  | Command / method                                                       | Gitleaks                   | Exit | Findings |
+| ---------------------- | ---------------------------------------------------------------------- | -------------------------- | ---: | -------: |
+| Candidate Git history  | `gitleaks git --log-opts="--all" --redact=100`                         | 8.30.1; 21 patches scanned |    0 |        0 |
+| Candidate tracked tree | `git archive pa2`, then `gitleaks dir <extracted-source> --redact=100` | 8.30.1                     |    0 |        0 |
+
+The report files were saved outside the repository, under a temporary scan directory. The candidate's [Quality `pa2` run #27](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42857411211) passed its four required checks. Công extracted the candidate ZIP into a separate directory and verified Git integrity (`git fsck --full`), the tag and commit, `npm ci`, lint, formatting, typechecking, and **26/26 passing tests**. The ZIP's `.git/pa2-release-verification.json` recorded the candidate SHA, CI link, both clean scans and archive validation.
+
+**Release boundary:** the scan results above belong to candidate `0824360`. When these evidence documents are subsequently committed, they create a different final SHA. The updated `pa2` tag must receive its own passing CI and fresh Gitleaks scans. The exact **new** SHA, scan results and ZIP verification must be recorded in `.git/pa2-release-verification.json` of the final submission ZIP. This avoids presenting an older scan as proof of a newer commit.
