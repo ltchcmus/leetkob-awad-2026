@@ -28,10 +28,10 @@ The [contract](docs/contract/publish-lab.md) specifies `POST /v1/labs/{labId}/pu
 
 The regression tests were introduced separately in commit [`4de49b1`](https://github.com/ltchcmus/leetkob-awad-2026/commit/4de49b1), before the implementation repairs. Expected responses were not weakened or changed.
 
-**Verification:** Node.js 24.11.0; lint, format, typecheck and all 26 tests passed locally after both repairs. [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the four required checks for commit `0fd6107`. The final documentation commit and release tag require their own verification before submission.
+**Verification:** Node.js 24.11.0; lint, format, typecheck and all 26 tests passed locally after both repairs. [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the four required checks for commit `0fd6107`. The final submission tag requires its own CI and archive verification.
 
 ## Submission archive
 
-The original submission archive was `23120200-23120222-23120252_100.zip`. It represents the earlier `pa2` release and does not establish verification of the new repairs.
+The PA#2 submission archive is `23120200-23120222-23120252_100.zip`, based on the verified `pa2` tag. It includes the complete `.git/` history, source code, tests and required documentation, while excluding `node_modules/`, local databases and secrets.
 
-The replacement archive must be generated from the updated `pa2` tag after PR #12 is merged and all required checks pass. It must include the complete `.git` history and required documentation, while excluding `node_modules`, local databases and secrets. The release-verification metadata must record the actual final commit SHA, matching tag CI run and Gitleaks scan results. The replacement ZIP must pass independent verification before submission.
+The `.git/pa2-release-verification.json` file records the final commit SHA, matching tag CI run, Gitleaks version and scan results, and extracted-archive verification. The ZIP must pass all four quality checks before submission.

@@ -234,7 +234,7 @@ Permissions and secret-handling requirements are documented in [docs/permissions
 | `AGENTS.md`                 | Project development rules              |
 | `AI-LOG.md`                 | Task decisions and AI assistance       |
 | `docs/permissions.md`       | Permissions and secret handling        |
-| `docs/provenance.md`        | Source attribution                     |
+| `docs/provenance.md`        | Project information                    |
 | `docs/contract/`            | HTTP contract and test coverage        |
 | `PA2.md`                    | PA#2 implementation evidence           |
 | `SELF_ASSESSMENT_REPORT.md` | Evaluation against assignment criteria |
@@ -243,7 +243,7 @@ The evidence and self-assessment documents record the completed PA#2 verificatio
 
 ## 11. PA#2 Submission
 
-The PA#2 release uses the Git tag `pa2`. The final-review fixes will be included when this tag is updated to the final reviewed commit after merging.
+The PA#2 submission uses Git tag `pa2`, including the SQLite and HTTP routing repairs from [PR #12](https://github.com/ltchcmus/leetkob-awad-2026/pull/12).
 
 After the final release tag has been updated and verified, it can be checked out using:
 
@@ -256,7 +256,7 @@ The final submission archive must include the repository history and required do
 
 **Submission deadline:** 11 November 2026, 22:00 (Asia/Ho_Chi_Minh).
 
-The final archive will be prepared after CI verification and independently checked against the release tag before submission.
+The submission archive must be checked against the release tag, CI results and Gitleaks scan, then extracted and verified before upload.
 
 ## 12. Future Development
 
