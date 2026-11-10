@@ -420,3 +420,33 @@ On the shared `fix/pa2-final-review` branch, add two regression tests before imp
 - The raw dot-segment regression expected 404 and observed 200.
 - The exclusive-lock regression expected 503 and observed 500.
 - No application, repository, contract or expected-value change was made.
+
+## 2026-11-10 — Handle SQLite locks during the TA access check
+
+**Owner:** Nguyễn Hưng Thịnh — 23120200
+
+**Tool:** OpenAI Codex, Git, PowerShell, Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Fix the SQLite regression on `fix/pa2-final-review` after Hậu's test commit `4de49b1`. An exclusive lock during TA ownership lookup must produce HTTP 503 with `Retry-After: 1`. The same request should succeed after lock release.
+
+**Kept:**
+
+- The contract's ownership check order, rollback before error translation and existing tests.
+
+**Changed:**
+
+- Extracted one mapper for SQLite `BUSY` (5) and `LOCKED` (6). Both `assertAccess()` and `publish()` use it to raise `publication-unavailable`.
+- Applied the mapper at the initial ownership read, where `BEGIN EXCLUSIVE` can prevent SQLite from reading before the publish transaction starts.
+
+**Rejected:**
+
+- Mapping unrelated database or application failures to a retryable 503. The mapper rethrows other errors for their existing handling.
+
+**Validation:**
+
+- Reproduced both failures at `4de49b1`. The exclusive lock returned 500 and the raw dot-segment path returned 200.
+- The exclusive-lock regression now passes with HTTP 503, `Retry-After: 1`, zero partial writes and a successful HTTP 200 retry. The existing write contention and audit rollback tests passed too.
+- Lint and format passed. The full suite reported 25 passes and 1 failure. The raw-path test still receives 200 where it expects 404.
+- Type checking reported TS2379 at `test/publish.contract.test.ts:103`. The raw request helper passes `incoming.statusCode`, which can be `undefined`, to `ResponseInit.status`. This is part of the HTTP handoff.

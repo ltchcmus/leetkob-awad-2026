@@ -19,6 +19,20 @@ interface Lab {
   deadline: string;
 }
 
+const SQLITE_BUSY = 5;
+const SQLITE_LOCKED = 6;
+
+function rethrowPublicationError(error: unknown): never {
+  if (
+    error instanceof Error &&
+    "errcode" in error &&
+    (error.errcode === SQLITE_BUSY || error.errcode === SQLITE_LOCKED)
+  ) {
+    throw new Problem("publication-unavailable");
+  }
+  throw error;
+}
+
 export const schema = `
   PRAGMA foreign_keys = ON;
   CREATE TABLE IF NOT EXISTS labs (
@@ -89,7 +103,11 @@ export class PublicationRepository {
   }
 
   assertAccess(labId: number, principal: Principal): void {
-    this.ownedLab(labId, principal);
+    try {
+      this.ownedLab(labId, principal);
+    } catch (error) {
+      rethrowPublicationError(error);
+    }
   }
 
   publish(
@@ -161,14 +179,7 @@ export class PublicationRepository {
       return { receipt: text, replayed: false };
     } catch (error) {
       if (this.db.isTransaction) this.db.exec("ROLLBACK");
-      if (
-        error instanceof Error &&
-        "errcode" in error &&
-        (error.errcode === 5 || error.errcode === 6)
-      ) {
-        throw new Problem("publication-unavailable");
-      }
-      throw error;
+      rethrowPublicationError(error);
     }
   }
 }
