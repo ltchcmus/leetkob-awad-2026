@@ -474,12 +474,13 @@ Continue Hậu's second final-review turn after Thịnh's SQLite repair: pull th
 - Narrowed the raw test helper's optional HTTP status before constructing a `Response`; no expected value changed.
 - Expanded the coverage map to 26 tests, including raw dot-segment routing and an exclusive lock during the initial access check.
 - Updated the self-assessment with evidence-backed actual responsibilities, 26/26 final-review coverage and a `What we did not manage` section.
+- Opened [final-review PR #12](https://github.com/ltchcmus/leetkob-awad-2026/pull/12) against `main` after pushing the repair.
 
 **Rejected:**
 
 - Changing or skipping either regression test to obtain a green run.
 - Parsing with `new URL()` before checking the raw request path.
-- Claiming final-review PR CI, merge, retagging, final-SHA scan, replacement ZIP or Classroom resubmission before each event occurs.
+- Claiming merge, retagging, final-SHA scan, replacement ZIP or Classroom resubmission before each event occurs.
 
 **Validation:**
 
@@ -487,4 +488,5 @@ Continue Hậu's second final-review turn after Thịnh's SQLite repair: pull th
 - On Node.js 24.11.0, lint and typecheck passed and all 26 tests passed with zero failures.
 - The first format check identified only `SELF_ASSESSMENT_REPORT.md`; Prettier formatted that file before the complete gate was rerun.
 - The complete rerun passed lint, format, typecheck and all 26 tests on Node.js 24.11.0.
+- [PR #12 CI run 42839951066](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/42839951066) passed the required lint, format, typecheck and tests jobs for repair commit `0fd6107`.
 - No application behavior outside raw-route rejection was intentionally changed.
