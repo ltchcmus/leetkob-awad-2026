@@ -697,3 +697,12 @@ collision. Allocation now includes all legacy class IDs, and the review query
 also filters current membership in the same statement that reads its rows.
 The regression was committed before the production fix; no fixture or expected
 authorization outcome was loosened.
+
+### Final local checks
+
+On source commit `6a2b055`, all four quality checks pass and all 65 tests pass
+with zero failures or skips. Gitleaks 8.30.1 scanned all reachable history (36
+commit patches) and a tracked-source snapshot; both exited 0 with no findings.
+The official integrity verifier also passed for all 128 published files. The
+verification record distinguishes local results from pending real-adapter and
+deployment work. No remote approval, push, CI run or team sign-off is claimed.

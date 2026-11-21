@@ -5,20 +5,26 @@ Base: `1c194cd2568397c474c63c346e1cde99af06ec59`.
 
 ## Current verification
 
-- Storage: implemented; 20 database/queue regressions pass, including migration
+- Storage: implemented; 21 database/queue regressions pass, including migration
   from PA2, atomic admission/results, lease fencing, infrastructure retries,
   counted-head protection and fail-closed Publish.
 - Worker: implemented as a separate executable process. Ten offline tests cover
   orchestration, stop/restart, an active-process crash, checkpoint recovery and
   invalid checker output. The process tests use an explicitly configured test
   adapter; they do not prove sandbox isolation or real model behavior.
-- Compatibility: all 26 existing tests still pass. Lint, format check and strict
-  TypeScript checks pass on Node 24.11.0. See the committed
+- Compatibility: all 26 existing tests still pass; the current total is 65.
+  Lint, format check and strict TypeScript checks pass on Node 24.11.0. See the committed
   [storage run](evidence/pa3-storage/storage-tests.txt) and
   [worker run](evidence/pa3-storage/worker-tests.txt).
+  The [final run](evidence/pa3-storage/final-tests.txt) additionally includes five
+  HTTP integration cases and three evaluation-data validation cases.
 - Pending integration: API routes/authentication owned by Hậu, real sandbox and
   checker adapters owned by Công, and the public deployment walkthrough.
   No API implementation, protected-main setting, remote branch or tag was changed.
+
+Five own evaluation cases and the official 128-file integrity manifest are ready
+in `test/eval-cases/`. Their structural validation passes; sandbox Accepted checks
+and Hậu's independent label review remain pending.
 
 ## API integration
 
