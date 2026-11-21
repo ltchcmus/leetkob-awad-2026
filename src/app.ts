@@ -247,12 +247,13 @@ export function createApp(options: AppOptions): Server {
         rawPath,
       );
       const reviews = /^\/v1\/labs\/([1-9][0-9]*)\/reviews$/.exec(rawPath);
+      const lab = /^\/v1\/labs\/([1-9][0-9]*)$/.exec(rawPath);
       const status = /^\/v1\/submissions\/([0-9a-f-]{36})$/.exec(rawPath);
       const reviewDecision = /^\/v1\/reviews\/([0-9a-f-]{36})\/decision$/.exec(
         rawPath,
       );
       const isCreateLab = rawPath === "/v1/labs";
-      const route = publish ?? submission ?? reviews;
+      const route = publish ?? submission ?? reviews ?? lab;
       const labId = Number(route?.[1]);
       if (
         (!route && !status && !reviewDecision && !isCreateLab) ||
@@ -268,11 +269,13 @@ export function createApp(options: AppOptions): Server {
           ? `/v1/labs/${labId}/submissions`
           : reviews
             ? `/v1/labs/${labId}/reviews`
-            : reviewDecision
-              ? `/v1/reviews/${reviewDecision[1]}/decision`
-              : status
-                ? `/v1/submissions/${status[1]}`
-                : "/v1/labs";
+            : lab
+              ? `/v1/labs/${labId}`
+              : reviewDecision
+                ? `/v1/reviews/${reviewDecision[1]}/decision`
+                : status
+                  ? `/v1/submissions/${status[1]}`
+                  : "/v1/labs";
       const url = new URL(target, "http://localhost");
       if (request.method !== expectedMethod)
         throw new Problem("method-not-allowed");
@@ -335,6 +338,10 @@ export function createApp(options: AppOptions): Server {
           submissionId: result.submissionId,
           judgeVerdict: result.judgeVerdict,
         });
+        return;
+      }
+      if (lab) {
+        sendJson(response, 200, repository.getLabForTa(principal, labId));
         return;
       }
       sendJson(response, 200, repository.getReviewQueue(principal, labId));

@@ -786,3 +786,37 @@ Define final student judge-verdict visibility, hard-rule/model checker and CLI a
 - Product Owners FAQ: post-Publish student visibility.
 - Thinh: queue/review state, scoring aggregation, rounding and persistence.
 - Cong: model boundary and final CLI/Docker packaging.
+
+## 2026-11-21 - TA lab-read API completion
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Complete the remaining TA lab-read HTTP contract without changing the existing
+PA#2 publication behavior.
+
+**Changed:**
+
+- Added a read-only `WorkflowRepository.getLabForTa` method. It reuses the
+  existing TA ownership guard and reads only the lab ID, class ID and statement.
+- Added `GET /v1/labs/{labId}`. The route authenticates before access, returns
+  200 only to an owning TA, and exposes no tests, constraints or internal data.
+- Added contract coverage for a request without credentials and Student/Admin
+  requests. Rejected requests preserve the persisted database snapshot.
+
+**Rejected:**
+
+- Direct SQL or ownership decisions in the HTTP layer.
+- Returning lab testcases, constraints, submissions, review data or checker data.
+- Changing PA#2 Publish behavior, schema, migrations, queue logic or existing
+  G1 authorization assertions.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 79 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.

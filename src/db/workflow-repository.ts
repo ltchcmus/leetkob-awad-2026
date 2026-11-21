@@ -229,6 +229,19 @@ export class WorkflowRepository extends PublicationRepository {
     });
   }
 
+  getLabForTa(
+    actor: Principal,
+    labId: number,
+  ): { labId: number; classId: number; statement: string } {
+    this.requireOwnedLab(actor, labId);
+    const lab = this.one<{ labId: number; classId: number; statement: string }>(
+      "SELECT l.id AS labId, l.class_id AS classId, d.statement FROM labs l JOIN lab_details d ON d.lab_id = l.id WHERE l.id = ?",
+      labId,
+    );
+    if (!lab) throw new Problem("not-found");
+    return lab;
+  }
+
   submit(
     actor: Principal,
     labId: number,
