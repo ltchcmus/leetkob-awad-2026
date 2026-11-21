@@ -613,3 +613,31 @@ now requires all configured tests to pass before recording AC.
 lease fencing, bounded infrastructure retries, duplicate completion, transaction
 rollback, checker-pending publication, review authorization/versioning, source
 size limits and migration compatibility. No sandbox payload or model call ran.
+
+## 21 November 2026 — Separate worker and recovery boundary
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Implement the separate worker/review integration boundary and
+prepare acceptance tests while the sandbox and API owners build their adapters.
+
+**Kept:** An explicit trusted adapter module, persisted AC checkpoint, conditional
+lease renewal and fencing at every result write. The checker input contains only
+its documented fields; provider sanitization remains in the checker adapter.
+
+**Changed:** A weak null-output test initially passed because its wrong constraint
+count hit another guard. Changed it to the correct count with null entries, saw
+`retry` instead of the required TA-only `unsure`, and fixed entry validation.
+The stronger test was committed before the fix. Test expectations were not loosened.
+
+**Rejected:** Selecting a fake adapter when production configuration is absent,
+equating a worker-side timeout with proof of container cleanup, or counting an
+offline orchestration fixture as a real C++/model run.
+
+**Validation:** Worker tests were committed before the production worker; their
+first run exited 1 because the worker module did not exist. The implementation
+passes ten worker tests, including two using a separate Node process. Stop,
+enqueue, restart and crash/recover both leave one persisted verdict set. All 56
+tests and the four project quality checks pass on Node 24.11.0. Docker CLI is
+installed but its Linux daemon is unavailable on this machine; no nine-minimum
+sandbox verification or deployment walkthrough is claimed.

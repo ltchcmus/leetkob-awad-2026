@@ -620,6 +620,9 @@ export class WorkflowRepository extends PublicationRepository {
         submission.judge_status !== "AC" ||
         !Array.isArray(evaluations) ||
         evaluations.length !== constraints.length ||
+        evaluations.some(
+          (evaluation) => evaluation === null || typeof evaluation !== "object",
+        ) ||
         new Set(evaluations.map((e) => e.constraintId)).size !==
           constraints.length ||
         evaluations.some(
