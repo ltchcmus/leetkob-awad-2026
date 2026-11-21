@@ -188,6 +188,27 @@ test("an invalid checker protocol becomes unsure with a reason, never a deductio
   );
 });
 
+test("null checker entries are schema failures rather than infrastructure retries", async (t) => {
+  const { repo, now, enqueue, labId } = workflowFixture(t);
+  enqueue();
+  const adapter = adapters();
+  adapter.checkSubmission = async (input) => ({
+    solution: input.solution,
+    evaluations: [null] as unknown as Awaited<
+      ReturnType<PipelineAdapters["checkSubmission"]>
+    >["evaluations"],
+  });
+  assert.equal(
+    await processOneJob(repo, adapter, { workerId: "test", now: () => now }),
+    "completed",
+  );
+  assert.ok(
+    repo
+      .getReviewQueue(people.ta, labId)
+      .items.every((item) => item.verdict === "unsure"),
+  );
+});
+
 test("worker watchdog aborts a stalled sandbox adapter and retries infrastructure", async (t) => {
   const { repo, now, enqueue } = workflowFixture(t);
   enqueue();
