@@ -641,3 +641,25 @@ enqueue, restart and crash/recover both leave one persisted verdict set. All 56
 tests and the four project quality checks pass on Node 24.11.0. Docker CLI is
 installed but its Linux daemon is unavailable on this machine; no nine-minimum
 sandbox verification or deployment walkthrough is claimed.
+
+## 21 November 2026 — HTTP acceptance preparation and product policy
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Prepare integration QA before the full product walkthrough.
+
+**Kept:** Paired happy/negative cases, direct HTTP requests to the real application,
+and the Product Owners FAQ pinned at `2b82b90`.
+
+**Changed:** Replaced the earlier missing-FAQ assumption with verified entries.
+Added five HTTP checks covering pending judging, AC with no initialized reviews,
+pending human decisions, role/class isolation and successful publication/replay.
+The public acceptance runbook explicitly separates these checks from the later
+lab-creation/submission/deployment walkthrough.
+
+**Rejected:** Claiming that injection-free fixture authentication or an offline
+checker proves deployed authentication, model quality or sandbox security.
+
+**Validation:** All five new HTTP integration cases pass on Node 24.11.0; strict
+type checking passes. The full public walkthrough awaits the API routes and
+reviewed sandbox/checker adapters. No public QA sign-off has been fabricated.
