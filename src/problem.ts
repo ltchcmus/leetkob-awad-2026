@@ -28,6 +28,11 @@ export const problems = {
     "Reviews pending",
     "Required TA reviews are not complete.",
   ],
+  "workflow-conflict": [
+    409,
+    "Workflow conflict",
+    "The workflow state no longer accepts this action.",
+  ],
   "payload-too-large": [
     413,
     "Payload too large",
