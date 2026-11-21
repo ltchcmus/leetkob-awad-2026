@@ -545,3 +545,56 @@ test("deleting initialized review rows fails closed instead of publishing an emp
     /reviews are not complete/i,
   );
 });
+
+test("a recovered AC job resumes checking without losing its persisted judge result", (t) => {
+  const { repo, connect, labId } = fixture(t);
+  submit(repo, labId);
+  const initial = claimed(repo);
+  repo.recordJudgeResult(initial, { judgeStatus: "AC", tests: ["AC"] }, start);
+  const recovered = connect().claimJob("replacement", {
+    now: start + 1000,
+    leaseMs: 1000,
+  });
+  assert.ok(recovered);
+  assert.deepEqual(recovered.judgeResult, { judgeStatus: "AC", tests: ["AC"] });
+  assert.throws(
+    () => repo.completeChecking(initial, evaluations(), start + 1000),
+    /lease-lost/,
+  );
+  repo.completeChecking(recovered, evaluations(), start + 1001);
+  assert.equal(
+    repo.db.prepare("SELECT COUNT(*) AS n FROM verdict_sets").get()?.n,
+    1,
+  );
+});
+
+test("an incomplete or contradictory AC result cannot advance the pipeline", (t) => {
+  const { repo, labId } = fixture(t);
+  const receipt = submit(repo, labId);
+  const claim = claimed(repo);
+  for (const tests of [[], ["WA" as const], ["AC" as const, "AC" as const]]) {
+    assert.throws(
+      () => repo.recordJudgeResult(claim, { judgeStatus: "AC", tests }, start),
+      /invalid-input/,
+    );
+  }
+  assert.equal(
+    repo.getSubmissionForStudent(student, receipt.submissionId).judgeVerdict,
+    null,
+  );
+});
+
+test("admission size and unauthorized class creation fail without creating jobs", (t) => {
+  const { repo, labId } = fixture(t);
+  assert.throws(
+    () => repo.submit(student, labId, { source: "é".repeat(32769) }, start),
+    /invalid-input/,
+  );
+  assert.throws(
+    () => repo.createClass(student, "unauthorized"),
+    /assigned TA/i,
+  );
+  assert.equal(repo.db.prepare("SELECT COUNT(*) AS n FROM jobs").get()?.n, 0);
+  repo.submit(student, labId, { source: "a".repeat(65536) }, start);
+  assert.equal(repo.db.prepare("SELECT COUNT(*) AS n FROM jobs").get()?.n, 1);
+});
