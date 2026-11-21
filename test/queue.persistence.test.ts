@@ -598,3 +598,17 @@ test("admission size and unauthorized class creation fail without creating jobs"
   repo.submit(student, labId, { source: "a".repeat(65536) }, start);
   assert.equal(repo.db.prepare("SELECT COUNT(*) AS n FROM jobs").get()?.n, 1);
 });
+
+test("new classes never reuse a legacy class ID and inherit its private labs", (t) => {
+  const { repo } = fixture(t);
+  repo.db.exec(
+    "INSERT INTO labs VALUES (999, 3, '2026-01-01T00:00:00.000Z'); INSERT INTO ta_classes VALUES ('legacy-ta', 3)",
+  );
+  const newClass = repo.createClass(admin, "New unrelated class");
+  repo.assignTa(admin, newClass, foreign.id);
+  assert.notEqual(newClass, 3);
+  assert.throws(
+    () => repo.getReviewQueue(foreign, 999),
+    /requested resource was not found/i,
+  );
+});
