@@ -640,3 +640,26 @@ Create test-first coverage for syntax-aware C++ hard rules and a model-off check
 
 - Official evaluation dataset README, statement.md, constraints.json schema and trap cases are unavailable locally; validate the proposed fixture adapter against those sources before implementation.
 - The precise adapter layout and solution identifier representation remain pending that official schema.
+
+## 2026-11-21 - Test-gate separation and HTTP contract RED evidence
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Separate PA#2 regression, checker, and proposed HTTP-contract test gates while retaining the actual HTTP contract RED evidence.
+
+**Changed:**
+
+- Added focused npm scripts for PA#2 regression, checker, and HTTP contract suites.
+- Recorded the observed HTTP contract RED result, command, commit, and failure reasons in a repository evidence document.
+
+**Kept:**
+
+- All HTTP contract assertions and their RED results; no handler, expected assertion, fixture, or test was weakened.
+- The existing branch-protection ruleset and CI workflow; required-check configuration was not changed.
+
+**Pending:**
+
+- The HTTP contract gate becomes required only after the G4 routes are implemented and the tests pass genuinely.
+- The leader must approve any future ruleset or workflow change that alters required-check coverage.
