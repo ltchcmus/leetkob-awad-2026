@@ -194,7 +194,7 @@ test("null checker entries are schema failures rather than infrastructure retrie
   const adapter = adapters();
   adapter.checkSubmission = async (input) => ({
     solution: input.solution,
-    evaluations: [null] as unknown as Awaited<
+    evaluations: [null, null] as unknown as Awaited<
       ReturnType<PipelineAdapters["checkSubmission"]>
     >["evaluations"],
   });
