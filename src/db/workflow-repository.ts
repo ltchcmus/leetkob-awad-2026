@@ -121,8 +121,11 @@ export class WorkflowRepository extends PublicationRepository {
     if (!name.trim() || name.length > 200)
       throw new WorkflowError("invalid-input");
     return Number(
-      this.db.prepare("INSERT INTO classes (name) VALUES (?)").run(name)
-        .lastInsertRowid,
+      this.db
+        .prepare(
+          "INSERT INTO classes (id, name) SELECT COALESCE(MAX(id), 0) + 1, ? FROM (SELECT id FROM classes UNION SELECT class_id AS id FROM labs UNION SELECT class_id AS id FROM ta_classes)",
+        )
+        .run(name).lastInsertRowid,
     );
   }
 
@@ -709,8 +712,12 @@ export class WorkflowRepository extends PublicationRepository {
       JOIN counted_heads h ON h.submission_id = s.id
       JOIN verdicts v ON v.submission_id = s.id AND v.constraint_id = r.constraint_id
       JOIN lab_constraints c ON c.lab_id = s.lab_id AND c.constraint_id = r.constraint_id
-      WHERE s.lab_id = ? ORDER BY s.received_at, s.id, c.position`,
+      WHERE s.lab_id = ? AND EXISTS (
+        SELECT 1 FROM labs l JOIN ta_classes membership ON membership.class_id = l.class_id
+        WHERE l.id = s.lab_id AND membership.ta_id = ?
+      ) ORDER BY s.received_at, s.id, c.position`,
       labId,
+      actor.id,
     );
     return {
       items: rows.map((row) => ({

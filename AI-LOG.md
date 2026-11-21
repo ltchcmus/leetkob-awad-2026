@@ -687,3 +687,13 @@ without compiling/running them inside the reviewed sandbox.
 **Validation:** Structural own-case checks pass. Hậu's label ACK, sandbox Accepted
 verification and real checker/model runs remain pending and are stated in the
 case README. No model prediction or provider call log has been fabricated.
+
+### Storage audit — legacy class IDs
+
+**Changed:** Audit found that allocating a new class ID solely from the new
+`classes` table could reuse an ID already present in legacy labs/TA assignments,
+granting access to unrelated old labs. A regression failed with that exact
+collision. Allocation now includes all legacy class IDs, and the review query
+also filters current membership in the same statement that reads its rows.
+The regression was committed before the production fix; no fixture or expected
+authorization outcome was loosened.
