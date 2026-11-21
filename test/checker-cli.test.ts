@@ -22,17 +22,22 @@ type Prediction = {
 function runCli(
   data: string,
   predictions: string,
+  options: { preload?: string } = {},
 ): Promise<{ code: number | null; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(
-      process.execPath,
-      ["src/checker/cli.ts", "--data", data, "--predictions", predictions],
-      {
-        cwd: process.cwd(),
-        env: { ...process.env, MODEL_OFF: "1" },
-        stdio: ["ignore", "ignore", "pipe"],
-      },
-    );
+    const arguments_ = [
+      ...(options.preload === undefined ? [] : ["--require", options.preload]),
+      "src/checker/cli.ts",
+      "--data",
+      data,
+      "--predictions",
+      predictions,
+    ];
+    const child = spawn(process.execPath, arguments_, {
+      cwd: process.cwd(),
+      env: { ...process.env, MODEL_OFF: "1" },
+      stdio: ["ignore", "ignore", "pipe"],
+    });
     let stderr = "";
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk: string) => {
@@ -68,7 +73,7 @@ function writeOwnDataset(t: TestContext) {
   return { root, predictions };
 }
 
-test("G5 proposed CLI: --data and --predictions write model-off JSONL with hard-rule precedence", async (t) => {
+test("G5 proposed CLI: --data and --predictions write deterministic model-off JSONL with hard-rule precedence", async (t) => {
   const { root, predictions } = writeOwnDataset(t);
   const result = await runCli(root, predictions);
   assert.equal(result.code, 0, result.stderr);
@@ -77,13 +82,6 @@ test("G5 proposed CLI: --data and --predictions write model-off JSONL with hard-
     .split("\n")
     .map((line) => JSON.parse(line) as Prediction);
   assert.deepEqual(rows, [
-    { solution: "compliant", constraint: "C1", verdict: "pass", evidence: [] },
-    {
-      solution: "compliant",
-      constraint: "C2",
-      verdict: "unsure",
-      evidence: [],
-    },
     {
       solution: "banned",
       constraint: "C1",
@@ -96,9 +94,67 @@ test("G5 proposed CLI: --data and --predictions write model-off JSONL with hard-
       ],
     },
     { solution: "banned", constraint: "C2", verdict: "unsure", evidence: [] },
+    { solution: "compliant", constraint: "C1", verdict: "pass", evidence: [] },
+    {
+      solution: "compliant",
+      constraint: "C2",
+      verdict: "unsure",
+      evidence: [],
+    },
   ]);
   for (const row of rows) {
     assert.equal(Object.hasOwn(row, "deduction"), false);
     assert.equal(Object.hasOwn(row, "deductionTenths"), false);
   }
+});
+
+test("G5 proposed CLI: MODEL_OFF does not use node network connection APIs", async (t) => {
+  const { root, predictions } = writeOwnDataset(t);
+  const networkGuard = join(root, "network-guard.cjs");
+  writeFileSync(
+    networkGuard,
+    [
+      "const deny = () => { throw new Error('network attempted'); };",
+      "const net = require('node:net');",
+      "net.connect = deny; net.createConnection = deny;",
+      "const tls = require('node:tls'); tls.connect = deny;",
+    ].join("\n"),
+  );
+  const result = await runCli(root, predictions, { preload: networkGuard });
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(readFileSync(predictions, "utf8").includes('"unsure"'));
+});
+
+test("G5 proposed CLI: invalid JSON fails without producing predictions", async (t) => {
+  const { root, predictions } = writeOwnDataset(t);
+  writeFileSync(join(root, "constraints.json"), "{ invalid JSON");
+  const result = await runCli(root, predictions);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /Cannot read valid JSON constraints/);
+  assert.throws(() => readFileSync(predictions, "utf8"));
+});
+
+test("G5 proposed CLI: missing proposed dataset paths fail without predictions", async (t) => {
+  const root = mkdtempSync(join(tmpdir(), "leetkob-g5-missing-"));
+  const predictions = join(root, "predictions.jsonl");
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const result = await runCli(root, predictions);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /ENOENT/);
+  assert.throws(() => readFileSync(predictions, "utf8"));
+});
+
+test("G5 proposed CLI: duplicate proposed constraint ids are rejected", async (t) => {
+  const { root, predictions } = writeOwnDataset(t);
+  writeFileSync(
+    join(root, "constraints.json"),
+    JSON.stringify([
+      { id: "C1", text: "Do not call `std::sort`.", deductionTenths: 15 },
+      { id: "C1", text: "Use merge sort.", deductionTenths: 20 },
+    ]),
+  );
+  const result = await runCli(root, predictions);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /Duplicate constraint id: C1/);
+  assert.throws(() => readFileSync(predictions, "utf8"));
 });
