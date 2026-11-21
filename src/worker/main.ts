@@ -56,6 +56,7 @@ async function main(): Promise<void> {
   try {
     log({ event: "worker.ready" });
     const workerId = randomUUID();
+    // A worker finishes its current lease before polling; jobs are not parallelized here.
     while (!stop.signal.aborted) {
       const result = await processOneJob(repo, module.adapters, {
         workerId,
@@ -80,7 +81,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(() => {
+try {
+  await main();
+} catch {
   console.error(
     JSON.stringify({
       event: "worker.failed",
@@ -88,4 +91,4 @@ main().catch(() => {
     }),
   );
   process.exitCode = 1;
-});
+}

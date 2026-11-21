@@ -275,17 +275,15 @@ export class WorkflowRepository extends PublicationRepository {
         labId,
         actor.id,
       );
-      if (!counted) {
-        counted = {
-          id: Number(
-            this.db
-              .prepare(
-                "INSERT INTO counted_submissions (lab_id, student_id, judge_status, score_tenths) VALUES (?, ?, 'queued', 0)",
-              )
-              .run(labId, actor.id).lastInsertRowid,
-          ),
-        };
-      }
+      counted ??= {
+        id: Number(
+          this.db
+            .prepare(
+              "INSERT INTO counted_submissions (lab_id, student_id, judge_status, score_tenths) VALUES (?, ?, 'queued', 0)",
+            )
+            .run(labId, actor.id).lastInsertRowid,
+        ),
+      };
       const sequence = this.one<{ n: number }>(
         "SELECT COALESCE(MAX(sequence), 0) + 1 AS n FROM submissions WHERE lab_id = ? AND student_id = ?",
         labId,
@@ -472,8 +470,7 @@ export class WorkflowRepository extends PublicationRepository {
       claim.submissionId,
     );
     if (
-      !job ||
-      job.state !== "leased" ||
+      job?.state !== "leased" ||
       job.lease_token !== claim.leaseToken ||
       job.lease_expires_at === null ||
       job.lease_expires_at <= now
