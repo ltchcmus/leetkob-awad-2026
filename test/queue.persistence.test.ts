@@ -22,6 +22,7 @@ function fixture(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), "leetkob-queue-"));
   const path = join(directory, "app.db");
   const repo = new WorkflowRepository(path);
+  const connections = [repo];
   for (const principal of [admin, ta, foreign, student, otherStudent]) {
     repo.provisionUser(principal);
   }
@@ -42,10 +43,15 @@ function fixture(t: TestContext) {
     ],
   });
   t.after(() => {
-    repo.close();
+    for (const connection of connections) connection.close();
     rmSync(directory, { recursive: true, force: true });
   });
-  return { repo, path, labId };
+  const connect = () => {
+    const connection = new WorkflowRepository(path);
+    connections.push(connection);
+    return connection;
+  };
+  return { repo, path, labId, connect };
 }
 
 function evaluations(violation = false): ConstraintEvaluation[] {
@@ -112,10 +118,9 @@ test("migration upgrades an existing PA2 file without changing its rows or recei
 });
 
 test("submission admission atomically stores source, lab data, head and durable job", (t) => {
-  const { repo, path, labId } = fixture(t);
+  const { repo, connect, labId } = fixture(t);
   const receipt = submit(repo, labId);
-  const reopened = new WorkflowRepository(path);
-  t.after(() => reopened.close());
+  const reopened = connect();
   assert.equal(
     reopened.getSubmissionForStudent(student, receipt.submissionId).status,
     "queued",
@@ -137,10 +142,9 @@ test("submission admission atomically stores source, lab data, head and durable 
 });
 
 test("idempotency survives another connection and conflicts cannot mutate data", (t) => {
-  const { repo, path, labId } = fixture(t);
+  const { repo, connect, labId } = fixture(t);
   const first = submit(repo, labId);
-  const second = new WorkflowRepository(path);
-  t.after(() => second.close());
+  const second = connect();
   assert.deepEqual(submit(second, labId), first);
   assert.throws(
     () =>
@@ -204,11 +208,10 @@ test("new admission stops at the deadline but an authorized receipt can replay",
 });
 
 test("separate connections claim once; expired leases recover with a new fenced attempt", (t) => {
-  const { repo, path, labId } = fixture(t);
+  const { repo, connect, labId } = fixture(t);
   submit(repo, labId);
   const first = claimed(repo);
-  const second = new WorkflowRepository(path);
-  t.after(() => second.close());
+  const second = connect();
   assert.equal(
     second.claimJob("worker-2", { now: start, leaseMs: 1000 }),
     null,
