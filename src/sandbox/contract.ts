@@ -1,4 +1,4 @@
-/** PROPOSED: sandbox-only boundary; worker/API integration awaits owner ACK. */
+/** Sandbox-owned v1 boundary; worker/API integration review remains separate. */
 export type JudgeStatus = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
 
 export type SourceSnapshot = Readonly<{
@@ -120,7 +120,7 @@ export type SandboxContext = Readonly<{
   signal: AbortSignal;
 }>;
 
-/** Expected export of runner.ts in the implementation change; not implemented here. */
+/** Implemented by runner.ts; only the trusted worker/controller may supply policy. */
 export type RunInSandbox = (
   request: SandboxRequest,
   policy: SandboxPolicy,

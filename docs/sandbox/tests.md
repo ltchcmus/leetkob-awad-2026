@@ -1,24 +1,28 @@
 # Sandbox test design and commands
 
-Status: **test-first proposal**. Fixtures and assertions exist; a runner and judge
-image do not. A passing harness self-test is not proof that C++ attacks were blocked.
+Status: **implemented, local Docker tests executed**. Harness/oracle tests remain
+distinct from real C++ attack execution. Hosted CI and production probes are pending.
 
 Use Node 24.11.0. Existing `npm test` selects only `test/*.test.ts`; it does **not**
-include these nested tests. No existing check or workflow has been changed.
+include these nested tests. A separate sandbox workflow invokes all nested suites.
+The existing quality workflow and PA2 tests remain unchanged.
 
 ```powershell
 fnm env --shell powershell | Out-String | Invoke-Expression
 fnm use 24.11.0
-node --test --test-concurrency=1 test/sandbox/harness.test.ts
-node --test --test-concurrency=1 test/sandbox/sandbox.contract.test.ts
+docker build --provenance=false --tag leetkob-judge:sandbox-v1 --file Dockerfile.judge judge
+$env:SANDBOX_JUDGE_IMAGE = docker image inspect leetkob-judge:sandbox-v1 --format '{{index .RepoDigests 0}}'
+if ($LASTEXITCODE -ne 0) { throw 'Judge image preflight failed' }
+$env:SANDBOX_RUN_ATTACKS = '1'
+node --test --test-concurrency=1 --test-reporter=spec test/sandbox/*.test.ts
 ```
 
-The second command must currently exit 1 with explicit missing-runner failures.
-It does not skip tests or return fake verdicts. Missing Docker/image/opt-in are also
-failures, not successful attacks. No C++ is compiled or executed in this state.
+Missing Docker/image/opt-in are failures, never successful attack results. Build context
+is only judge/, additionally allowlisted by its .dockerignore. No repository environment
+file, student program or model key enters the image build context.
 
-After a reviewed implementation and image exist, real execution requires explicit
-trusted configuration (replace the digest with an actual built image):
+For an already built approved digest, real execution still requires explicit trusted
+configuration (replace the placeholder with the actual digest):
 
 ```powershell
 $env:SANDBOX_RUN_ATTACKS = '1'
@@ -32,12 +36,12 @@ secret/mount configurations on a public host. Assertions are not weakened to get
 ## Harness and safety envelope
 
 The harness checks the runner exists **before** launching anything. Each actual case
-uses a separate trusted Node process; it imports the future `runInSandbox` adapter.
+uses a separate trusted Node process; it imports the `runInSandbox` adapter.
 The parent limits protocol output to 128 KiB and kills the child process tree after
 30 seconds (a POSIX process group, or bounded Windows taskkill /T).
 The adapter supplies an abort signal at 25 seconds. Each Node test allows 60 seconds
-for startup, timeout and cleanup; cases run sequentially. Proposed CI job timeout is
-15 minutes for 13 cases plus image build; actual CI integration remains future work.
+for startup, timeout and cleanup; cases run sequentially. The sandbox CI job timeout is
+15 minutes, including image build, PA2 checks and the sandbox suites.
 
 On success or failure after dispatch, the parent independently checks Docker for all
 containers bearing its random run UUID, then force-removes only those IDs in `finally`.
@@ -86,7 +90,7 @@ containers. Inspect evidence is supplementary: each row also checks fixture beha
 It also feeds synthetic safe/weak results to the assertion oracle for every M row,
 plus cleanup and infrastructure-failure negative controls. These modeled controls
 prove the assertions reject those inputs; they do not prove an actual vulnerable
-container was defeated. Real red/green mutation evidence remains pending. Never run
+container was defeated. Two bounded real CPU/memory negative controls now reject weakened limits; other weak-configuration mutations remain pending. Never run
 a network-enabled, privileged, host-mounted or genuinely secret-bearing weak variant.
 
 ## Implementation acceptance beyond individual rows
@@ -102,12 +106,15 @@ a network-enabled, privileged, host-mounted or genuinely secret-bearing weak var
 - Record real image digest, policy version, exit codes, bounded logs and Linux CI run
   on the submission tag. Production VPS execution must be verified separately.
 
-The current branch does not claim M1-M9, a worker or CI security gates are complete.
-Host capacity, production probes, worker integration and owner ACKs remain pending.
+The real M1-M9 suite has passed locally. Worker integration, hosted CI/tag evidence,
+production probes and host capacity verification remain pending. Extra integration tests
+cover compiler CPU/wall/memory/output, fresh test state, ordered aggregation, runtime
+errors, cancellation and cleanup after a trusted worker process crash.
 
-## Local verification record
+## Historical test-first checkpoint
 
-21 November 2026, Node 24.11.0, Windows development host:
+Commit ca5690b3e695abeb50bd9096bc654dda7890dd99, 21 November 2026,
+Node 24.11.0, before runner/image implementation:
 
 | Command                                                                  | Exit | Observation                                                 |
 | ------------------------------------------------------------------------ | ---- | ----------------------------------------------------------- |
@@ -118,6 +125,28 @@ Host capacity, production probes, worker integration and owner ACKs remain pendi
 | `node --test --test-concurrency=1 test/sandbox/harness.test.ts`          | 0    | 16 harness/oracle tests pass; no C++ execution              |
 | `node --test --test-concurrency=1 test/sandbox/sandbox.contract.test.ts` | 1    | 13 expected RED tests: runner.ts absent; no C++ execution   |
 
-No judge image was built, container attack executed, worker integrated or CI run
-published for this change. Existing Docker readiness is a prerequisite, not a substitute
-for the pending real attack results. This record is not a claim that security CI passes.
+At that checkpoint no judge image or runner existed and no C++ was executed. Its
+13 RED results remain in history; assertions/fixtures were not weakened to turn them
+green. Current execution evidence is recorded separately.
+
+## Current local implementation evidence
+
+21 November 2026: npm ci and all four quality checks exit 0; PA2 26/26 PASS.
+The complete sandbox command exits 0 with 47/47 PASS, 0 skipped: 16 harness/oracle,
+7 admission/infrastructure, 11 extra real integration and 13 original attack/control tests.
+The real caller example exits 0 with AC and verified cleanup. No labeled containers remain.
+
+- [Verification metadata and source hashes](evidence/local-verification.json)
+- [Actual complete sandbox test output](evidence/local-sandbox-tests.txt)
+- [Actual worker example response](evidence/worker-example.json)
+
+The tests include actual bounded weakened CPU/memory controls; no weak network/root/
+mount/socket/secret configuration was executed. Source fixtures and assertions from
+the test-first commit remain unchanged. A fake-daemon test exposed and verified the
+repair of create-failure mapping. The worker-crash observer was corrected to await
+actual execution before terminating the worker; its exit-77 expectation was preserved.
+
+A Docker Desktop tag/digest lookup inconsistency was observed after an attested build.
+A single-manifest rebuild with --provenance=false resolved lookup during final checks;
+this is an observation, not a diagnosis of Docker internals. Hosted CI and VPS are
+still pending; local results must not be represented as a GitHub run or production proof.

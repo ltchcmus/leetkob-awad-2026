@@ -1,0 +1,79 @@
+{
+  "kind": "completed",
+  "submissionId": "worker-example",
+  "sourceSha256": "bfae4ec70bcb947b46250c71086f96a70c620d2fd74201bb6920900be408c06e",
+  "policyVersion": "sandbox-v1",
+  "judgeStatus": "AC",
+  "compile": {
+    "status": "AC",
+    "reason": "ok",
+    "stdout": "",
+    "stderr": "",
+    "capturedBytes": 0,
+    "outputTruncated": false,
+    "cpuTimeMs": 391.621,
+    "wallTimeMs": 436.0344,
+    "memoryPeakBytes": 48234496,
+    "oomKilled": false
+  },
+  "tests": [
+    {
+      "testId": "sum-1",
+      "result": {
+        "status": "AC",
+        "reason": "ok",
+        "stdout": "5\n",
+        "stderr": "",
+        "capturedBytes": 2,
+        "outputTruncated": false,
+        "cpuTimeMs": 128.955,
+        "wallTimeMs": 98.64609999999993,
+        "memoryPeakBytes": 5767168,
+        "oomKilled": false
+      }
+    }
+  ],
+  "isolation": [
+    {
+      "containerId": "a2f1956af5c8d15938d8b4c08b68e98760a3688b7015714da4bb67099378d2f2",
+      "runId": "0da72704-c885-4ec0-b14a-a98c5d2c8abc",
+      "phase": "compile",
+      "imageDigest": "leetkob-judge@sha256:de453c6fad8815456f0c736b2d00f72a676b3b5c248e36454b88c2480ed3b74b",
+      "networkMode": "none",
+      "user": "65534:65534",
+      "privileged": false,
+      "readonlyRootfs": true,
+      "capDrop": ["ALL"],
+      "noNewPrivileges": true,
+      "mounts": [],
+      "memoryBytes": 536870912,
+      "memorySwapBytes": 536870912,
+      "pids": 32,
+      "cpuQuota": 1,
+      "environmentNames": ["PATH", "HOME", "LANG", "TMPDIR"]
+    },
+    {
+      "containerId": "46863d0e758eddfa8ca8079fe8b0e359223b3aed0fc43dc7576691cff7c6a1d3",
+      "runId": "0da72704-c885-4ec0-b14a-a98c5d2c8abc",
+      "phase": "run",
+      "imageDigest": "leetkob-judge@sha256:de453c6fad8815456f0c736b2d00f72a676b3b5c248e36454b88c2480ed3b74b",
+      "networkMode": "none",
+      "user": "65534:65534",
+      "privileged": false,
+      "readonlyRootfs": true,
+      "capDrop": ["ALL"],
+      "noNewPrivileges": true,
+      "mounts": [],
+      "memoryBytes": 67108864,
+      "memorySwapBytes": 67108864,
+      "pids": 16,
+      "cpuQuota": 1,
+      "environmentNames": ["PATH", "HOME", "LANG", "TMPDIR"]
+    }
+  ],
+  "cleanup": {
+    "attempted": true,
+    "succeeded": true,
+    "remainingContainerIds": []
+  }
+}

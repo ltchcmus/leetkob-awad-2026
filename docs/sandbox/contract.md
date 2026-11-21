@@ -1,11 +1,11 @@
-# Sandbox boundary proposal
+# Sandbox boundary
 
-Status: **PROPOSED, not frozen**. Owner: Công. Worker/persistence ACK: Thịnh;
-API/source/test snapshot ACK: Hậu. There is no runner, judge image, worker integration
-or security CI evidence in this change. The PA2 publish contract is unchanged.
+Status: **implemented and tested locally**. Sandbox owner: Công. Worker/API integration
+review remains with Thịnh/Hậu. A judge image and real Docker M1-M9 tests exist;
+hosted CI and production VPS verification remain pending. The PA2 contract is unchanged.
 
-The proposed TypeScript boundary is [contract.ts](../../src/sandbox/contract.ts).
-`runner.ts` will export `runInSandbox(request, policy, context)` in a later change.
+The TypeScript boundary is [contract.ts](../../src/sandbox/contract.ts).
+[runner.ts](../../src/sandbox/runner.ts) exports `runInSandbox(request, policy, context)`.
 The worker is a separate trusted process from the HTTP API; submitted C++ is never
 run on the host. The sandbox cannot call the checker, model, database or publication endpoint.
 
@@ -39,9 +39,9 @@ it is never copied to the host for execution. Whether one container with control
 phases or multiple isolated containers are used remains an implementation choice;
 the phase-specific limits and artifact isolation must hold either way.
 
-Readonly TypeScript types document the boundary, not runtime validation. The future
-runner must validate and copy inputs/policy before creating containers, rejecting
-unknown executable configuration. Proposed admission bounds: source <= 1 MiB,
+Readonly TypeScript types document the boundary. The runner also validates and copies
+inputs/policy before creating containers, rejecting unknown executable configuration.
+Sandbox admission bounds: source <= 1 MiB,
 1..100 tests, total input+expected-output <= 4 MiB; these are pending owner ACK and
 are distinct from API HTTP limits. Limits are finite positive integers, except CPU
 quota which is positive finite. Configuration is never silently relaxed.
@@ -88,7 +88,7 @@ wall time and peak memory. No unbounded Docker log spool is allowed. Raw diagnos
 remain internal, bounded, and are not automatically returned to students or public CI.
 
 The wall watchdog/abort kills and removes the entire container lifecycle, including
-descendants. The future runner must label **every** created container with the
+descendants. The runner labels **every** created container with the
 trusted UUID `leetkob.sandbox.run=<context.runId>`. This includes compile containers
 and containers created before a start failure. The test harness independently queries
 Docker for this label and removes only those containers in `finally`.
@@ -127,3 +127,30 @@ Thịnh's responsibility; this module does not mutate the database.
 
 Only sandbox scope is proposed here. No changes to PR #15, API status DTOs,
 queue schema, hard rules, model adapter or PA2 behavior are implied by these types.
+
+## Implementation notes
+
+Docker Engine API v1.45 over the local Unix socket or Windows named pipe creates
+containers. The socket remains in the trusted controller and is never mounted.
+Remote TCP/SSH Docker endpoints are deliberately unsupported by this transport.
+Actual inspect values are checked before the controller starts a container.
+
+An isolated Python transport helper writes source in private tmpfs, invokes the fixed
+compiler and streams a size-bounded executable back through memory. It does not execute
+the executable on the host. A fresh run container receives that executable and input;
+the helper replaces itself with the submitted program. Expected outputs stay trusted.
+Compiler diagnostics and program output are streamed with separate artifact framing;
+no metadata from submitted stdout is treated as a trusted verdict.
+
+CPU is sampled from Docker's aggregate cgroup counter and enforced by the host, with
+per-process RLIMIT_CPU as a fallback. This includes compiler/program descendants.
+Memory and swap use hard cgroup limits. `memoryPeakBytes` is the maximum observed
+Docker memory sample (or the kernel maximum when supplied), not an exact profiler;
+short-lived allocations can occur between samples. Container OOM evidence determines MLE.
+
+The live controller enforces the phase wall deadline. A detached trusted Node watchdog
+also force-removes a container if the worker crashes: its backstop deadline is phase
+wall time plus 8 seconds for startup/observation. This backstop is not the normal TLE
+deadline. If Docker is unavailable, removal cannot be guaranteed; cleanup failure must
+quarantine capacity and prevent automatic retry. No system can claim cleanup success
+through a daemon outage. See [worker integration](worker-integration.md).
