@@ -1,0 +1,28 @@
+#include <iostream>
+#include <vector>
+
+void merge_sort(std::vector<int>& a, int lo, int hi) {
+    if (hi - lo <= 1) return;
+    int mid = lo + (hi - lo) / 2;
+    merge_sort(a, lo, mid);
+    merge_sort(a, mid, hi);
+    std::vector<int> merged;
+    int left = lo, right = mid;
+    while (left < mid || right < hi) {
+        if (right == hi || (left < mid && a[left] <= a[right]))
+            merged.push_back(a[left++]);
+        else
+            merged.push_back(a[right++]);
+    }
+    for (int i = lo; i < hi; ++i) a[i] = merged[i - lo];
+}
+
+int main() {
+    int n;
+    if (!(std::cin >> n)) return 0;
+    std::vector<int> a(n);
+    for (int& value : a) std::cin >> value;
+    merge_sort(a, 0, n);
+    for (int value : a) std::cout << value << ' ';
+    std::cout << '\n';
+}
