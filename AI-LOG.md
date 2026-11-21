@@ -563,3 +563,32 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - A fresh clone at `0824360` was checked out at the annotated `pa2` tag. The candidate ZIP included `.git/`, code, tests, Markdown evidence and release metadata without `node_modules/` or local databases.
 - After extracting the candidate ZIP, `git fsck --full` passed; `npm ci`, lint, format check, typecheck and all 26 tests passed. Git status was clean. The final ZIP was extracted again and its Git objects, tag, commit and metadata verified.
 - This entry records the completed verification of **candidate SHA `0824360`**. If documentation is committed after that SHA, the final release SHA and its new Gitleaks/CI/ZIP evidence are recorded separately in the new archive's `.git/pa2-release-verification.json`.
+
+## 21 November 2026 — Durable submission storage: contract and regression tests
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Review the proposed submission, queue and review interfaces; preserve
+PA2 publishing; implement durable storage with lease recovery and duplicate-result
+protection, and prepare integration verification.
+
+**Kept:** The existing HTTP publication contract and table shapes, integer tenths
+for scores, short SQLite transactions, and separate sandbox/checker adapters.
+
+**Changed:** The proposed boundary now separates job lifecycle from judge result,
+submission retries from execution attempts, and checker readiness from an empty
+review queue. Reading `PublicationRepository.publish` showed that absent review
+rows alone could not represent incomplete checking. Added regression cases for
+that state, fencing stale workers, rollback, admission retries and resubmissions.
+
+**Rejected:** Treating sandbox infrastructure failure as student `WA`/`RE`,
+overwriting counted results from an older submission, or claiming the initial
+regression run exercised assertions that could not yet load.
+
+**Validation:** On base `1c194cd`, Node 24.11.0: `npm ci`, lint,
+format check, typecheck and all 26 existing tests passed. The first new regression
+run exited 1 because `src/db/workflow-repository.ts` did not yet exist; no new
+behavioral assertion ran in that first run. Tests and the storage contract were
+recorded before production implementation. The locally installed Node 25 was
+replaced for these commands by a portable 24.11.0 executable verified against the
+official SHA-256. Fetch reported a differing local `pa2` tag; it was preserved.
