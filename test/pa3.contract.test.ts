@@ -6,32 +6,57 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { TestContext } from "node:test";
 import { createApp } from "../src/app.ts";
-import { PublicationRepository } from "../src/repository.ts";
+import { WorkflowRepository } from "../src/db/workflow-repository.ts";
 import type { Principal } from "../src/repository.ts";
 
-const now = "2026-11-05T08:00:00.000Z";
-const identities: Record<string, Principal> = {
+const now = Date.parse("2026-11-05T08:00:00.000Z");
+const identities = {
+  admin: { id: "admin-g1", role: "admin" },
   own: { id: "ta-own", role: "ta" },
   foreign: { id: "ta-foreign", role: "ta" },
   student: { id: "student-1", role: "student" },
-};
+} satisfies Record<string, Principal>;
+
+function databaseSnapshot(repository: WorkflowRepository): string {
+  const tables = repository.db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+    )
+    .all() as Array<{ name: string }>;
+  return JSON.stringify(
+    tables.map(({ name }) => [
+      name,
+      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
+    ]),
+  );
+}
 
 async function fixture(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), "leetkob-pa3-contract-"));
-  const path = join(directory, "app.db");
-  const repository = new PublicationRepository(path);
-  repository.db.exec(`
-    INSERT INTO labs VALUES (1, 10, '${now}');
-    INSERT INTO ta_classes VALUES ('ta-own', 10), ('ta-foreign', 20);
-    INSERT INTO counted_submissions VALUES (11, 1, 'student-1', 'AC', 70);
-    INSERT INTO review_items VALUES (11, 'C1', 'pass');
-  `);
+  const repository = new WorkflowRepository(join(directory, "app.db"));
+  for (const identity of Object.values(identities)) {
+    repository.provisionUser(identity);
+  }
+  const classId = repository.createClass(identities.admin, "Class A");
+  const foreignClassId = repository.createClass(identities.admin, "Class B");
+  repository.assignTa(identities.admin, classId, identities.own.id);
+  repository.assignTa(identities.admin, foreignClassId, identities.foreign.id);
+  repository.enrollStudent(identities.own, classId, identities.student.id);
+  const labId = repository.createLab(identities.own, {
+    classId,
+    statement: "example statement",
+    deadline: new Date(now + 60_000).toISOString(),
+    tests: [{ input: "", expectedOutput: "" }],
+    constraints: [
+      { id: "C1", text: "Do not use `goto`.", deductionTenths: 20 },
+    ],
+  });
   const server = createApp({
     repository,
     authenticate: (request) => {
       const value = request.headers.authorization;
       return value?.startsWith("Bearer ")
-        ? identities[value.slice(7)]
+        ? identities[value.slice("Bearer ".length) as keyof typeof identities]
         : undefined;
     },
     clock: () => new Date(now),
@@ -49,35 +74,27 @@ async function fixture(t: TestContext) {
     rmSync(directory, { recursive: true, force: true });
   });
   return {
+    classId,
+    labId,
     repository,
     request: (
       path: string,
-      token: keyof typeof identities,
-      options: { method?: string; body?: string } = {},
+      token: keyof typeof identities | undefined,
+      options: { method?: string; body?: object } = {},
     ) =>
       fetch(`http://127.0.0.1:${address.port}${path}`, {
         method: options.method ?? "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          ...(token === undefined ? {} : { Authorization: `Bearer ${token}` }),
+          ...(options.body === undefined
+            ? {}
+            : { "Content-Type": "application/json" }),
         },
-        ...(options.body === undefined ? {} : { body: options.body }),
+        ...(options.body === undefined
+          ? {}
+          : { body: JSON.stringify(options.body) }),
       }),
   };
-}
-
-function databaseSnapshot(repository: PublicationRepository): string {
-  const tables = repository.db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-    )
-    .all() as Array<{ name: string }>;
-  return JSON.stringify(
-    tables.map(({ name }) => [
-      name,
-      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
-    ]),
-  );
 }
 
 async function expectProblem(response: Response, status: number, slug: string) {
@@ -90,56 +107,173 @@ async function expectProblem(response: Response, status: number, slug: string) {
   assert.equal(body.type, `https://leetkob.example/problems/${slug}`);
 }
 
+async function submit(
+  request: (
+    path: string,
+    token: keyof typeof identities | undefined,
+    options?: { method?: string; body?: object },
+  ) => Promise<Response>,
+  labId: number,
+) {
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source: "int main() { return 0; }\n" },
+  });
+  assert.equal(response.status, 202);
+  return (await response.json()) as {
+    submissionId: string;
+    status: string;
+    createdAt: string;
+  };
+}
+
 test("G1 proposed: owning TA can read a lab while a foreign TA receives non-disclosing 404", async (t) => {
-  const { repository, request } = await fixture(t);
+  const { classId, labId, repository, request } = await fixture(t);
   const before = databaseSnapshot(repository);
-  const owner = await request("/v1/labs/1", "own");
+  const owner = await request(`/v1/labs/${labId}`, "own");
   assert.equal(owner.status, 200);
   assert.deepEqual(await owner.json(), {
-    labId: 1,
-    classId: 10,
+    labId,
+    classId,
     statement: "example statement",
   });
-  const foreign = await request("/v1/labs/1", "foreign");
+  const foreign = await request(`/v1/labs/${labId}`, "foreign");
   await expectProblem(foreign, 404, "not-found");
   assert.equal(databaseSnapshot(repository), before);
 });
 
-test("G1 proposed: student cannot publish and a denied request does not mutate PA2 records", async (t) => {
-  const { repository, request } = await fixture(t);
+test("G1 proposed: GET lab authenticates and authorizes before exposing its statement", async (t) => {
+  const { labId, repository, request } = await fixture(t);
   const before = databaseSnapshot(repository);
-  const response = await request("/v1/labs/1/publish", "student", {
+  await expectProblem(
+    await request(`/v1/labs/${labId}`, undefined),
+    401,
+    "authentication-required",
+  );
+  for (const identity of ["student", "admin"] as const) {
+    await expectProblem(
+      await request(`/v1/labs/${labId}`, identity),
+      403,
+      "forbidden",
+    );
+  }
+  assert.equal(databaseSnapshot(repository), before);
+});
+
+test("G1 proposed: student cannot publish and a denied request does not mutate PA2 records", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/publish`, "student", {
     method: "POST",
-    body: "{}",
+    body: {},
   });
   await expectProblem(response, 403, "forbidden");
   assert.equal(databaseSnapshot(repository), before);
 });
 
 test("G1 proposed: enrolled student creates a queued submission without receiving a verdict", async (t) => {
-  const { request } = await fixture(t);
-  const response = await request("/v1/labs/1/submissions", "student", {
+  const { labId, request } = await fixture(t);
+  const receipt = await submit(request, labId);
+  assert.match(receipt.submissionId, /^[0-9a-f-]{36}$/);
+  assert.deepEqual(
+    { ...receipt, submissionId: "" },
+    {
+      submissionId: "",
+      status: "queued",
+      createdAt: new Date(now).toISOString(),
+    },
+  );
+  assert.equal(Object.hasOwn(receipt, "judgeVerdict"), false);
+});
+
+test("G4: a 65,536-byte UTF-8 source is accepted even though its JSON body is larger", async (t) => {
+  const { labId, request } = await fixture(t);
+  const source = "x".repeat(65_536);
+  assert.ok(Buffer.byteLength(JSON.stringify({ source }), "utf8") > 65_536);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
     method: "POST",
-    body: JSON.stringify({ source: "int main() {}" }),
+    body: { source },
   });
   assert.equal(response.status, 202);
-  assert.deepEqual(await response.json(), {
-    submissionId: "submission-1",
-    status: "queued",
-    createdAt: now,
+});
+
+test("G4: source above 65,536 UTF-8 bytes reaches G2 validation instead of the HTTP transport limit", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source: "x".repeat(65_537) },
   });
+  await expectProblem(response, 400, "validation");
+  assert.equal(databaseSnapshot(repository), before);
+});
+
+test("G4: submission transport limit is 512 KiB and reports its own 413 detail", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source: "ok", padding: "x".repeat(524_288) },
+  });
+  const problem = response.clone();
+  await expectProblem(response, 413, "payload-too-large");
+  assert.equal(
+    ((await problem.json()) as { detail: string }).detail,
+    "The request body exceeds 524288 bytes.",
+  );
+  assert.equal(databaseSnapshot(repository), before);
+});
+
+test("G4: mutation routes reject a wrong role before validating the request body", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const attempts = [
+    request("/v1/labs", "student", { method: "POST", body: {} }),
+    request(`/v1/labs/${labId}/submissions`, "own", {
+      method: "POST",
+      body: {},
+    }),
+    request(
+      "/v1/reviews/00000000-0000-0000-0000-000000000000/decision",
+      "admin",
+      {
+        method: "POST",
+        body: {},
+      },
+    ),
+  ];
+  for (const attempt of attempts) {
+    await expectProblem(await attempt, 403, "forbidden");
+  }
+  assert.equal(databaseSnapshot(repository), before);
 });
 
 test("G1 proposed: student status exposes only the final judge verdict before Publish", async (t) => {
-  const { request } = await fixture(t);
-  const response = await request("/v1/submissions/submission-1", "student");
+  const { labId, repository, request } = await fixture(t);
+  const receipt = await submit(request, labId);
+  const claim = repository.claimJob("g1-test-worker", {
+    now,
+    leaseMs: 30_000,
+  });
+  assert.ok(claim);
+  repository.recordJudgeResult(
+    claim,
+    { judgeStatus: "AC", tests: ["AC"] },
+    now,
+  );
+  const response = await request(
+    `/v1/submissions/${receipt.submissionId}`,
+    "student",
+  );
   assert.equal(response.status, 200);
   const body = (await response.json()) as Record<string, unknown>;
   assert.deepEqual(body, {
-    submissionId: "submission-1",
+    submissionId: receipt.submissionId,
     judgeVerdict: "AC",
   });
   for (const hiddenField of [
+    "status",
+    "testVerdicts",
     "constraintVerdicts",
     "deduction",
     "deductionTenths",
@@ -149,32 +283,68 @@ test("G1 proposed: student status exposes only the final judge verdict before Pu
   }
 });
 
-test("G1 proposed: owning TA can read its review queue", async (t) => {
-  const { request } = await fixture(t);
-  const response = await request("/v1/labs/1/reviews", "own");
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
-    items: [
+test("G1 proposed: owning TA can read its persisted flat review queue", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  await submit(request, labId);
+  const claim = repository.claimJob("g1-test-worker", {
+    now,
+    leaseMs: 30_000,
+  });
+  assert.ok(claim);
+  repository.recordJudgeResult(
+    claim,
+    { judgeStatus: "AC", tests: ["AC"] },
+    now,
+  );
+  repository.completeChecking(
+    claim,
+    [
       {
-        reviewId: "review-1",
-        submissionId: "submission-1",
-        constraints: [
-          {
-            constraintId: "C1",
-            verdict: "pass",
-            evidence: [],
-          },
-        ],
+        constraintId: "C1",
+        verdict: "pass",
+        source: "hard-rule",
+        evidence: [],
       },
     ],
-  });
+    now,
+  );
+  const response = await request(`/v1/labs/${labId}/reviews`, "own");
+  assert.equal(response.status, 200);
+  assert.deepEqual(
+    await response.json(),
+    repository.getReviewQueue(identities.own, labId),
+  );
 });
-test("G1 proposed: a foreign TA cannot read a review queue and leaves the database unchanged", async (t) => {
-  const { repository, request } = await fixture(t);
-  const before = databaseSnapshot(repository);
-  const owner = await request("/v1/labs/1/reviews", "own");
+
+test("G1 proposed: a foreign TA cannot read a persisted review queue and leaves the database unchanged", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  await submit(request, labId);
+  const claim = repository.claimJob("g1-test-worker", {
+    now,
+    leaseMs: 30_000,
+  });
+  assert.ok(claim);
+  repository.recordJudgeResult(
+    claim,
+    { judgeStatus: "AC", tests: ["AC"] },
+    now,
+  );
+  repository.completeChecking(
+    claim,
+    [
+      {
+        constraintId: "C1",
+        verdict: "pass",
+        source: "hard-rule",
+        evidence: [],
+      },
+    ],
+    now,
+  );
+  const owner = await request(`/v1/labs/${labId}/reviews`, "own");
   assert.equal(owner.status, 200);
-  const response = await request("/v1/labs/1/reviews", "foreign");
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/reviews`, "foreign");
   await expectProblem(response, 404, "not-found");
   assert.equal(databaseSnapshot(repository), before);
 });

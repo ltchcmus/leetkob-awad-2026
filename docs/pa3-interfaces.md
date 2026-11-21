@@ -25,15 +25,15 @@ lab, review queue, or another student's submission would disclose its
 existence. Failed authorization, validation, and precondition requests must
 not mutate the database.
 
-| Route                                  | Caller             | Proposed result            | Ownership/error semantics                                                                                                                                                                                  |
-| -------------------------------------- | ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/labs`                        | assigned TA        | `201` lab summary          | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                                             |
-| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary          | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                                                       |
-| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt   | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                                                         |
-| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status       | Other students receive `404`; before Publish the response contains the final judge verdict only, not constraint evaluation, deduction, or evidence. Post-Publish visibility is PENDING Product Owners FAQ. |
-| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items         | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                                                    |
-| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `200` reviewed item        | Decision value and review audit DTO are **PENDING Thịnh**. A student/admin gets `403`; foreign review gets `404`.                                                                                          |
-| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                                                   |
+| Route                                  | Caller             | Proposed result             | Ownership/error semantics                                                                                                                                                                                                           |
+| -------------------------------------- | ------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/labs`                        | assigned TA        | `201` lab summary           | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                                                                      |
+| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary           | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                                                                                |
+| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt    | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                                                                                  |
+| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status        | Other students receive `404`; before Publish the response contains the final judge verdict only, not constraint evaluation, deduction, or evidence. Post-Publish visibility is PENDING Product Owners FAQ.                          |
+| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items          | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                                                                             |
+| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `204` with no response body | Successful review updates return `204 No Content` with an empty body. Student/admin callers get `403`; foreign review gets `404`; invalid input gets `400`; stale version, already-published, or stale-submission state gets `409`. |
+| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt  | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                                                                            |
 
 ## Proposed DTOs
 
@@ -80,7 +80,19 @@ type ReviewQueueResponse = {
     constraints: ConstraintVerdict[];
   }>;
 };
+
+type ReviewDecisionRequest = {
+  decision: "pass" | "violation";
+  evidence: Array<{ line: number; text: string }>;
+  reason: string;
+  expectedVersion: number; // Nonnegative optimistic-lock version.
+};
 ```
+
+`POST /v1/reviews/{reviewId}/decision` accepts `ReviewDecisionRequest` and,
+on success, returns `204 No Content` with an empty body. The update, version
+increment, and review audit record are persisted atomically by the storage
+boundary. It intentionally returns no review or audit DTO.
 
 `deductionTenths` is selected by the TA, never returned by the model, and is
 not editable through model output. Precise size limits and validation errors
