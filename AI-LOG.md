@@ -730,3 +730,19 @@ The corrected stimulus and stronger assertions preserve the original contract.
 **Local validation:** Node 24.11.0: lint, formatting, typecheck and all 65 tests
 pass after the correction. Both process lifecycle tests pass. Linux CI validation
 is tracked on draft PR #16; the original failing run remains linked above.
+
+### SonarCloud follow-up
+
+The corrected crash test passed in Linux
+[Quality run 44899082079](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/44899082079),
+including all 65 tests. SonarCloud separately failed its reliability gate on the
+validator's implicit string sort. Added an explicit locale comparator, extracted
+validator and worker stages into smaller helpers, and moved the five existing
+HTTP test bodies into their discovered test file so analysis sees the real tests.
+The assertions, fixtures, labels and migration bytes are unchanged.
+
+Also applied optional/nullish expressions and top-level await suggested by the
+analyzer. Deliberately retained sequential worker polling: parallel claims would
+change its lifecycle contract. Sonar's PL/SQL duplicate-literal suggestions do not
+apply to immutable SQLite CHECK constraints; no analyzer exclusions, quality-gate
+thresholds or migration checksum changes were used to silence those suggestions.
