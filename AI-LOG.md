@@ -592,3 +592,24 @@ behavioral assertion ran in that first run. Tests and the storage contract were
 recorded before production implementation. The locally installed Node 25 was
 replaced for these commands by a portable 24.11.0 executable verified against the
 official SHA-256. Fetch reported a differing local `pa2` tag; it was preserved.
+
+### Durable storage implementation and verification
+
+**Changed:** Added a checksum-tracked migration that leaves the seven PA2 tables
+and their positional fixtures intact. New storage persists identities, classes,
+enrollment, lab content, immutable submissions, jobs/attempts, verdict sets,
+reviews/audit and provider-call metadata. A counted-head pointer prevents older
+jobs from overwriting the latest attempt. Publish also checks checker and review
+initialization. No model output supplies a score.
+
+**Found and corrected:** Three new tests initially failed during Windows cleanup
+because their extra SQLite connection was still open; fixed connection cleanup
+in its own commit, without weakening assertions. A later regression genuinely
+failed because an empty/contradictory AC test list was accepted. Production code
+now requires all configured tests to pass before recording AC.
+
+**Validation:** Node 24.11.0: lint, format check, typecheck and all 46 tests pass
+(26 existing + 20 new storage regressions). The tests cover persisted recovery,
+lease fencing, bounded infrastructure retries, duplicate completion, transaction
+rollback, checker-pending publication, review authorization/versioning, source
+size limits and migration compatibility. No sandbox payload or model call ran.
