@@ -746,3 +746,43 @@ analyzer. Deliberately retained sequential worker polling: parallel claims would
 change its lifecycle contract. Sonar's PL/SQL duplicate-literal suggestions do not
 apply to immutable SQLite CHECK constraints; no analyzer exclusions, quality-gate
 thresholds or migration checksum changes were used to silence those suggestions.
+
+## 2026-11-21 - PA#3 proposed contract amendment
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Define final student judge-verdict visibility, hard-rule/model checker and CLI adapter proposals, and strengthen contract tests without production changes before user-approved commit.
+
+**Kept:**
+
+- PA#2 publish semantics and all production handlers.
+- The original test-first contract commit `2e6211ee3684ed4964f2051ff6fb1a8d95b0d3a5` without amend or rewrite.
+- Proposed/PENDING status for Product Owners FAQ, Cong and Thinh decisions.
+
+**Changed:**
+
+- Updated the student status contract to return final `judgeVerdict` values `AC`, `WA`, `TLE`, `MLE`, `RE` or `CE`, while hiding constraint verdicts, deductions and internal evidence before Publish.
+- Added a proposed checker input/output boundary, hard-rule precedence, one-based original C++ evidence lines, deduction conversion and JSONL dataset-adapter semantics.
+- Strengthened contract tests with explicit hidden-field assertions and an owning-TA route assertion before the foreign-TA review negative case.
+
+**Rejected:**
+
+- Implementing the hard-rule engine, worker, CLI, sandbox or PA#3 HTTP handlers.
+- Mocking a fake HTTP response or changing expected results to make the contract tests pass.
+- Declaring unacknowledged interfaces frozen.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm run lint`, `npm run format:check` and `npm run typecheck` exited 0.
+- `npm test` exited 1 with 27 passing tests and 5 expected contract-first RED tests. Each RED is an absent PA#3 endpoint returning 404 where the proposed contract requires owning-TA lab 200, submission 202, student status 200, owning-TA review queue 200, or the owner precondition of the foreign-TA review test.
+- `git diff --check` passed. No production file was changed.
+
+**Pending:**
+
+- Product Owners FAQ: post-Publish student visibility.
+- Thinh: queue/review state, scoring aggregation, rounding and persistence.
+- Cong: model boundary and final CLI/Docker packaging.
