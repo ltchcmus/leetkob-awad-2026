@@ -663,3 +663,27 @@ checker proves deployed authentication, model quality or sandbox security.
 **Validation:** All five new HTTP integration cases pass on Node 24.11.0; strict
 type checking passes. The full public walkthrough awaits the API routes and
 reviewed sandbox/checker adapters. No public QA sign-off has been fabricated.
+
+## 21 November 2026 — Additional evaluation cases and integrity baseline
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Prepare at least five independently labelled and tagged cases and
+protect the official evaluation data before the real-model run.
+
+**Kept:** Separate official/own-case layouts, original source-line evidence and
+labels derived from the declared constraints before observing checker predictions.
+
+**Changed:** Added five sorting cases covering honest recursive/bottom-up merge
+sort, comment/string and own-namespace traps, a library-sort injection, and bubble
+sort disguised by its function name. Added complete-pair/label/tag/evidence tests
+and a byte-integrity verifier. Downloaded the official commit `552c811` into a
+temporary review location; all 128 hashes are recorded, with evaluator/label
+prefixes cross-checked against the rubric. No official file was edited.
+
+**Rejected:** Generating predictions from labels or declaring cases Accepted
+without compiling/running them inside the reviewed sandbox.
+
+**Validation:** Structural own-case checks pass. Hậu's label ACK, sandbox Accepted
+verification and real checker/model runs remain pending and are stated in the
+case README. No model prediction or provider call log has been fabricated.
