@@ -25,15 +25,15 @@ lab, review queue, or another student's submission would disclose its
 existence. Failed authorization, validation, and precondition requests must
 not mutate the database.
 
-| Route                                  | Caller             | Proposed result            | Ownership/error semantics                                                                                                                                                       |
-| -------------------------------------- | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/labs`                        | assigned TA        | `201` lab summary          | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                  |
-| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary          | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                            |
-| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt   | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                              |
-| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status       | Other students receive `404`; before Publish the response contains judge status only, not deduction or constraint verdict/evidence. Exact visibility awaits Product Owners FAQ. |
-| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items         | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                         |
-| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `200` reviewed item        | Decision value and review audit DTO are **PENDING Thịnh**. A student/admin gets `403`; foreign review gets `404`.                                                               |
-| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                        |
+| Route                                  | Caller             | Proposed result            | Ownership/error semantics                                                                                                                                                                                  |
+| -------------------------------------- | ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/labs`                        | assigned TA        | `201` lab summary          | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                                             |
+| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary          | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                                                       |
+| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt   | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                                                         |
+| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status       | Other students receive `404`; before Publish the response contains the final judge verdict only, not constraint evaluation, deduction, or evidence. Post-Publish visibility is PENDING Product Owners FAQ. |
+| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items         | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                                                    |
+| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `200` reviewed item        | Decision value and review audit DTO are **PENDING Thịnh**. A student/admin gets `403`; foreign review gets `404`.                                                                                          |
+| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                                                   |
 
 ## Proposed DTOs
 
@@ -64,8 +64,8 @@ type SubmissionReceipt = {
 
 type StudentSubmissionStatus = {
   submissionId: string;
-  judgeStatus: "queued" | "running" | "judged";
-  // No deduction, constraint verdict, or evidence before Publish.
+  judgeVerdict: "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
+  // No constraint verdict, deduction, deductionTenths, or evidence before Publish.
 };
 
 type ConstraintVerdict = {
@@ -134,3 +134,53 @@ are **PENDING Công/Hậu**.
   fields, and CLI packaging.
 - Hậu: final HTTP validation limits, exact error slugs, and contract-test
   fixtures after the above DTOs receive ACK.
+
+## Contract amendment: checker and student status
+
+**Status:** PROPOSED/PENDING ACK. This amendment refines the G1 proposal only; it does not implement a checker, worker, CLI, or HTTP handler.
+
+### Student status visibility
+
+`GET /v1/submissions/{submissionId}` returns the final judge verdict to the submitting student as `judgeVerdict`: `AC`, `WA`, `TLE`, `MLE`, `RE`, or `CE`. This judge verdict is the result of compiling and running the C++ submission against lab tests.
+
+Before Publish, this response must not contain `constraintVerdicts`, `deduction`, `deductionTenths`, or internal `evidence`. Constraint evaluation is separate from the judge verdict and remains TA-only until the Product Owners FAQ and Publish policy are confirmed. The exact student-facing representation after Publish is **PENDING Product Owners FAQ**.
+
+### Shared checker contract for G5/G6
+
+```ts
+type ConstraintVerdictKind = "pass" | "violation" | "unsure";
+type EvidenceLine = { line: number; text: string };
+
+type CheckerConstraint = {
+  id: string;
+  text: string;
+  deductionTenths: number;
+};
+
+type CheckerInput = {
+  solution: string;
+  statement: string;
+  source: string;
+  constraints: CheckerConstraint[];
+};
+
+type ConstraintEvaluation = {
+  constraintId: string;
+  verdict: ConstraintVerdictKind;
+  source: "hard-rule" | "model";
+  evidence: EvidenceLine[];
+};
+
+type CheckerOutput = {
+  solution: string;
+  evaluations: ConstraintEvaluation[];
+};
+```
+
+Hard rules run first. A hard-rule decision is final for that constraint: only constraints without a hard-rule decision are sent to the model, and a model result cannot override a hard-rule verdict. `pass`, `violation`, and `unsure` are evaluator verdicts, not marks.
+
+Each `EvidenceLine.line` is a 1-based line number in the original submitted C++ source. The model may receive comment-stripped source, but its evidence must map back to and match the original source line.
+
+`deductionTenths` is the TA-configured canonical integer amount in tenths of a mark. The presentation conversion is `deduction = deductionTenths / 10` marks. The checker never returns a deduction or changes it. The worker/review/publish path applies the TA-configured deduction only after the required human decision; score aggregation, rounding, and persistence are **PENDING Thịnh**.
+
+The checker CLI dataset adapter reads each dataset case into `CheckerInput` and writes one JSONL row per `(solution, constraint)` using `{ solution, constraint, verdict, evidence }`. `MODEL_OFF=1` performs hard-rule evaluation only and writes `unsure` for every semantic constraint without opening a network connection. Dataset directory traversal, Docker packaging, and the final CLI command remain **PENDING Công/Hậu**.

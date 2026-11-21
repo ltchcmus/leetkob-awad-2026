@@ -130,14 +130,23 @@ test("G1 proposed: enrolled student creates a queued submission without receivin
   });
 });
 
-test("G1 proposed: student status hides constraint verdict and deduction before Publish", async (t) => {
+test("G1 proposed: student status exposes only the final judge verdict before Publish", async (t) => {
   const { request } = await fixture(t);
   const response = await request("/v1/submissions/submission-1", "student");
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
+  const body = (await response.json()) as Record<string, unknown>;
+  assert.deepEqual(body, {
     submissionId: "submission-1",
-    judgeStatus: "judged",
+    judgeVerdict: "AC",
   });
+  for (const hiddenField of [
+    "constraintVerdicts",
+    "deduction",
+    "deductionTenths",
+    "evidence",
+  ]) {
+    assert.equal(Object.hasOwn(body, hiddenField), false);
+  }
 });
 
 test("G1 proposed: owning TA can read its review queue", async (t) => {
@@ -163,6 +172,8 @@ test("G1 proposed: owning TA can read its review queue", async (t) => {
 test("G1 proposed: a foreign TA cannot read a review queue and leaves the database unchanged", async (t) => {
   const { repository, request } = await fixture(t);
   const before = databaseSnapshot(repository);
+  const owner = await request("/v1/labs/1/reviews", "own");
+  assert.equal(owner.status, 200);
   const response = await request("/v1/labs/1/reviews", "foreign");
   await expectProblem(response, 404, "not-found");
   assert.equal(databaseSnapshot(repository), before);
