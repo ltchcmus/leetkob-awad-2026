@@ -706,3 +706,27 @@ commit patches) and a tracked-source snapshot; both exited 0 with no findings.
 The official integrity verifier also passed for all 128 published files. The
 verification record distinguishes local results from pending real-adapter and
 deployment work. No remote approval, push, CI run or team sign-off is claimed.
+
+## 21 November 2026 — Linux CI crash-recovery fixture
+
+Owner: Thịnh (23120200), assisted by Codex; publication authorized by Thịnh.
+
+**Observed:** After publishing draft PR #16, the first Linux
+[CI run](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/44898867978)
+passed lint, formatting and type checking but failed the crash/restart case:
+one execution attempt existed where two were expected. The same suite had passed
+on Windows.
+
+**Changed:** The fixture used default SIGTERM. Linux executes the worker's
+graceful shutdown handler, scheduling a delayed retry; Windows terminates that
+child abruptly. The crash case now explicitly sends SIGKILL, asserts the
+interrupted attempt is still active and leased, waits for the persisted lease
+deadline, and requires outcomes `lease_expired` then `completed`.
+
+**Rejected:** Weakening the expected attempt/verdict counts, changing production
+retry timing to suit the fixture, or rerunning CI without investigating the cause.
+The corrected stimulus and stronger assertions preserve the original contract.
+
+**Local validation:** Node 24.11.0: lint, formatting, typecheck and all 65 tests
+pass after the correction. Both process lifecycle tests pass. Linux CI validation
+is tracked on draft PR #16; the original failing run remains linked above.

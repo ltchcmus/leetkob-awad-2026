@@ -111,9 +111,21 @@ test(
     enqueue();
     const crashed = startWorker(t, path, { TEST_BLOCK_SANDBOX: "1" });
     await waitFor(crashed.child, crashed.output, "job.claimed");
-    crashed.child.kill();
+    // SIGTERM runs the graceful retry handler on Unix; SIGKILL models a crash.
+    assert.equal(crashed.child.kill("SIGKILL"), true);
     await exit(crashed.child);
-    await delay(550);
+    assert.equal(
+      repo.db.prepare("SELECT outcome FROM attempts").get()?.outcome,
+      "active",
+    );
+    const interrupted = repo.db
+      .prepare("SELECT state, lease_expires_at FROM jobs")
+      .get();
+    assert.equal(interrupted?.state, "leased");
+    assert.equal(typeof interrupted?.lease_expires_at, "number");
+    await delay(
+      Math.max(0, Number(interrupted?.lease_expires_at) - Date.now()) + 20,
+    );
     const recovered = startWorker(t, path, { WORKER_ONCE: "1" });
     assert.equal(await exit(recovered.child), 0, recovered.output());
     assert.equal(
@@ -123,6 +135,13 @@ test(
     assert.equal(
       repo.db.prepare("SELECT COUNT(*) AS n FROM verdict_sets").get()?.n,
       1,
+    );
+    assert.deepEqual(
+      repo.db
+        .prepare("SELECT outcome FROM attempts ORDER BY number")
+        .all()
+        .map((row) => row.outcome),
+      ["lease_expired", "completed"],
     );
   },
 );
