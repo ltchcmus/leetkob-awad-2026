@@ -186,6 +186,68 @@ test("G1 proposed: enrolled student creates a queued submission without receivin
   assert.equal(Object.hasOwn(receipt, "judgeVerdict"), false);
 });
 
+test("G4: a 65,536-byte UTF-8 source is accepted even though its JSON body is larger", async (t) => {
+  const { labId, request } = await fixture(t);
+  const source = "x".repeat(65_536);
+  assert.ok(Buffer.byteLength(JSON.stringify({ source }), "utf8") > 65_536);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source },
+  });
+  assert.equal(response.status, 202);
+});
+
+test("G4: source above 65,536 UTF-8 bytes reaches G2 validation instead of the HTTP transport limit", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source: "x".repeat(65_537) },
+  });
+  await expectProblem(response, 400, "validation");
+  assert.equal(databaseSnapshot(repository), before);
+});
+
+test("G4: submission transport limit is 512 KiB and reports its own 413 detail", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const response = await request(`/v1/labs/${labId}/submissions`, "student", {
+    method: "POST",
+    body: { source: "ok", padding: "x".repeat(524_288) },
+  });
+  const problem = response.clone();
+  await expectProblem(response, 413, "payload-too-large");
+  assert.equal(
+    ((await problem.json()) as { detail: string }).detail,
+    "The request body exceeds 524288 bytes.",
+  );
+  assert.equal(databaseSnapshot(repository), before);
+});
+
+test("G4: mutation routes reject a wrong role before validating the request body", async (t) => {
+  const { labId, repository, request } = await fixture(t);
+  const before = databaseSnapshot(repository);
+  const attempts = [
+    request("/v1/labs", "student", { method: "POST", body: {} }),
+    request(`/v1/labs/${labId}/submissions`, "own", {
+      method: "POST",
+      body: {},
+    }),
+    request(
+      "/v1/reviews/00000000-0000-0000-0000-000000000000/decision",
+      "admin",
+      {
+        method: "POST",
+        body: {},
+      },
+    ),
+  ];
+  for (const attempt of attempts) {
+    await expectProblem(await attempt, 403, "forbidden");
+  }
+  assert.equal(databaseSnapshot(repository), before);
+});
+
 test("G1 proposed: student status exposes only the final judge verdict before Publish", async (t) => {
   const { labId, repository, request } = await fixture(t);
   const receipt = await submit(request, labId);

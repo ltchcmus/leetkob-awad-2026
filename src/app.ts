@@ -24,7 +24,8 @@ function sendProblem(
   instance: string,
   allowedMethod = "POST",
 ): void {
-  const [status, title, detail] = problems[problem.kind];
+  const [status, title, defaultDetail] = problems[problem.kind];
+  const detail = problem.detail ?? defaultDetail;
   const extra: Record<string, string> = {};
   if (status === 401) extra["WWW-Authenticate"] = 'Bearer realm="leetkob"';
   if (status === 405) extra.Allow = allowedMethod;
@@ -49,6 +50,7 @@ function sendProblem(
 async function readObject(
   request: IncomingMessage,
   url: URL,
+  maxBytes = 4096,
 ): Promise<Record<string, unknown>> {
   const contentType = request.headers["content-type"] ?? "";
   const encoding = request.headers["content-encoding"];
@@ -65,7 +67,12 @@ async function readObject(
   for await (const chunk of request) {
     const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string);
     size += bytes.byteLength;
-    if (size > 4096) throw new Problem("payload-too-large");
+    if (size > maxBytes)
+      throw new Problem(
+        "payload-too-large",
+        undefined,
+        `The request body exceeds ${maxBytes} bytes.`,
+      );
     chunks.push(bytes);
   }
   let body: unknown;
@@ -300,6 +307,13 @@ export function createApp(options: AppOptions): Server {
       }
 
       const repository = workflow(options.repository);
+      if (
+        (reviewDecision || isCreateLab || lab || reviews) &&
+        principal.role !== "ta"
+      )
+        throw new Problem("forbidden");
+      if ((submission || status) && principal.role !== "student")
+        throw new Problem("forbidden");
       if (reviewDecision) {
         repository.reviewConstraint(
           principal,
@@ -323,7 +337,7 @@ export function createApp(options: AppOptions): Server {
         const receipt = repository.submit(
           principal,
           labId,
-          submissionInput(request, await readObject(request, url)),
+          submissionInput(request, await readObject(request, url, 524_288)),
           (options.clock ?? (() => new Date()))().getTime(),
         );
         sendJson(response, 202, receipt);

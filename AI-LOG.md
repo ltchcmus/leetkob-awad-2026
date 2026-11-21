@@ -820,3 +820,72 @@ PA#2 publication behavior.
 - `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
   26-test PA#2 authentication/publication regression command all exited 0.
 - `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-21 - G4 security and integration audit
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Audit the G4 HTTP boundary for authorization, ownership isolation, request
+normalization, submission admission, review decisions, status privacy and PA#2
+publication compatibility.
+
+**Changed:**
+
+- The submission route now has its own 64 KiB transport limit, while Publish
+  keeps its existing 4 KiB limit.
+- New mutation-route role gates run before body validation. A caller with an
+  ineligible role receives 403 and cannot use malformed input to change the
+  authorization response.
+- Added regression tests for both findings; rejected requests preserve the
+  database snapshot.
+
+**Rejected:**
+
+- Changing G2 persistence semantics, migrations, queue/worker behavior,
+  checker code, or PA#2 publication assertions.
+- Treating a permissive UUID-shaped route matcher or a generic problem-detail
+  wording as a demonstrated data-disclosure defect.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 81 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-21 - Submission HTTP body-limit boundary
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Separate the HTTP transport allowance for a submission from the persisted
+maximum source size, while preserving the PA#2 publication body limit.
+
+**Changed:**
+
+- Raised only the submission HTTP transport limit to 524,288 bytes. The
+  repository still rejects source text above 65,536 UTF-8 bytes.
+- Made the 413 detail derive from the route's actual byte limit. Publish still
+  returns the established 4,096-byte detail; Submission reports 524,288 bytes.
+- Added regression tests for a valid 65,536-byte source whose JSON envelope is
+  larger, an oversized source rejected by repository validation, and an
+  oversized submission transport body rejected with the correct 413 detail.
+
+**Rejected:**
+
+- Changing the repository source-size boundary, schema, migrations, PA#2
+  publication behavior, or any checker/queue/model implementation.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 83 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.
