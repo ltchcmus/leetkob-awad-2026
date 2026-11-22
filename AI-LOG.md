@@ -787,6 +787,66 @@ Define final student judge-verdict visibility, hard-rule/model checker and CLI a
 - Thinh: queue/review state, scoring aggregation, rounding and persistence.
 - Cong: model boundary and final CLI/Docker packaging.
 
+## 2026-11-21 - Syntax-aware hard-rule and checker CLI test-first work
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Create test-first coverage for syntax-aware C++ hard rules and a model-off checker CLI without implementing either production module or editing official evaluation files.
+
+**Kept:**
+
+- PA#2 behavior, the G1 interface proposal and all production source files.
+- The official dataset, labels and evaluator; no official evaluation source was found locally and none was created or modified.
+
+**Changed:**
+
+- Added own hard-rule tests for a real banned call, comments and strings, namespaces, whitespace-tokenized calls, allowed std::swap, evidence line mapping, prompt injection and no deduction fields.
+- Added an own temporary CLI fixture that specifies the proposed --data/--predictions JSONL contract in MODEL_OFF mode.
+
+**Rejected:**
+
+- Raw substring matching that would treat comments or strings as executable C++.
+- Mock HTTP responses, model calls, a fake dev run, or changing labels and expected results to obtain a pass.
+- Implementing the checker or CLI during this test-first stage.
+
+**Validation:**
+
+- Node.js 24.11.0: lint and typecheck exited 0.
+- The full test command exited 1: 27 passed and 11 failed. Six new RED tests are expected because src/checker/hard-rules.ts and src/checker/cli.ts do not exist; five pre-existing PA#3 HTTP contract RED tests still await their handlers.
+- Format check exited 1 because AI-LOG.md at the starting commit was not formatted by Prettier; the two new test files were formatted.
+
+**Pending:**
+
+- Official evaluation dataset README, statement.md, constraints.json schema and trap cases are unavailable locally; validate the proposed fixture adapter against those sources before implementation.
+- The precise adapter layout and solution identifier representation remain pending that official schema.
+
+## 2026-11-21 - Test-gate separation and HTTP contract RED evidence
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Separate PA#2 regression, checker, and proposed HTTP-contract test gates while retaining the actual HTTP contract RED evidence.
+
+**Changed:**
+
+- Added focused npm scripts for PA#2 regression, checker, and HTTP contract suites.
+- Recorded the observed HTTP contract RED result, command, commit, and failure reasons in a repository evidence document.
+
+**Kept:**
+
+- All HTTP contract assertions and their RED results; no handler, expected assertion, fixture, or test was weakened.
+- The existing branch-protection ruleset and CI workflow; required-check configuration was not changed.
+
+**Pending:**
+
+- The HTTP contract gate becomes required only after the G4 routes are implemented and the tests pass genuinely.
+- The leader must approve any future ruleset or workflow change that alters required-check coverage.
+
 ## 2026-11-21 - TA lab-read API completion
 
 **Owner:** Nguyen Phuc Hau - 23120252

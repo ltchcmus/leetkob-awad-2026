@@ -14,7 +14,11 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --test-reporter=spec test/*.test.ts"
+    "test": "npm run test:all",
+    "test:all": "node --test --test-reporter=spec test/*.test.ts",
+    "test:pa2": "node --test --test-reporter=spec test/auth.test.ts test/publish.contract.test.ts",
+    "test:g5": "node --test --test-reporter=spec test/hard-rules.test.ts test/checker-cli.test.ts",
+    "test:g1-contract": "node --test --test-reporter=spec test/pa3.contract.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
