@@ -949,3 +949,27 @@ maximum source size, while preserving the PA#2 publication body limit.
 - `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
   26-test PA#2 authentication/publication regression command all exited 0.
 - `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-22 - Test fixture duplication refactor
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js and npm.
+
+**Asked for:** Reduce verified SonarCloud duplicate test blocks without changing
+HTTP contracts, test scenarios or production behavior.
+
+**Changed:** Moved the repeated SQLite snapshot, HTTP server lifecycle and
+accepted-submission checking setup into focused helpers in
+`test/helpers/workflow.ts`. The API authorization, workflow and PA3 contract
+tests retain their own identities, persisted fixture setup, cleanup and
+assertions.
+
+**Rejected:** Editing production code, checker code, migrations, CI settings,
+SonarCloud settings, test assertions or test scenarios to change the quality
+result.
+
+**Validation:** On Node.js 24.11.0, `npm test` passed all 83 tests. The direct
+PA2 authentication/publication regression command passed all 26 tests. Lint,
+typecheck, format check and `git diff --check` exited 0. No commit, push or
+merge was performed.

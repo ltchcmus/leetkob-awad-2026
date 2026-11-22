@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { once } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -9,6 +8,7 @@ import { createApp } from "../src/app.ts";
 import { syntheticAuthenticator } from "../src/auth.ts";
 import { WorkflowRepository } from "../src/db/workflow-repository.ts";
 import type { Principal } from "../src/repository.ts";
+import { databaseSnapshot, startTestServer } from "./helpers/workflow.ts";
 
 const accounts = {
   admin: {
@@ -25,20 +25,6 @@ const accounts = {
     principal: { id: "student-a", role: "student" },
   },
 } satisfies Record<string, { token: string; principal: Principal }>;
-
-function snapshot(repository: WorkflowRepository): string {
-  const tables = repository.db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-    )
-    .all() as Array<{ name: string }>;
-  return JSON.stringify(
-    tables.map(({ name }) => [
-      name,
-      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
-    ]),
-  );
-}
 
 async function fixture(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), "leetkob-api-authz-"));
@@ -70,23 +56,12 @@ async function fixture(t: TestContext) {
     authenticate: syntheticAuthenticator(Object.values(accounts)),
     clock: () => new Date("2026-11-02T00:00:00.000Z"),
   });
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address();
-  assert.ok(address && typeof address === "object");
-  t.after(async () => {
-    server.closeAllConnections();
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    repository.close();
-    rmSync(directory, { recursive: true, force: true });
-  });
+  const port = await startTestServer(t, server, repository, directory);
   return {
     labId,
     repository,
     request: (token?: string) =>
-      fetch(`http://127.0.0.1:${address.port}/v1/labs/${labId}/publish`, {
+      fetch(`http://127.0.0.1:${port}/v1/labs/${labId}/publish`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,7 +74,7 @@ async function fixture(t: TestContext) {
 
 test("4A: malformed and unknown bearer credentials receive 401 without mutation", async (t) => {
   const { repository, request } = await fixture(t);
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   for (const token of [undefined, "unknown-token"]) {
     const response = await request(token);
     assert.equal(response.status, 401);
@@ -107,24 +82,24 @@ test("4A: malformed and unknown bearer credentials receive 401 without mutation"
       response.headers.get("www-authenticate"),
       'Bearer realm="leetkob"',
     );
-    assert.equal(snapshot(repository), before);
+    assert.equal(databaseSnapshot(repository), before);
   }
 });
 
 test("4A: admin and student roles are forbidden from Publish without mutation", async (t) => {
   const { repository, request } = await fixture(t);
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   for (const account of [accounts.admin, accounts.student]) {
     const response = await request(account.token);
     assert.equal(response.status, 403);
-    assert.equal(snapshot(repository), before);
+    assert.equal(databaseSnapshot(repository), before);
   }
 });
 
 test("4A: foreign TA receives non-disclosing 404 from another class without mutation", async (t) => {
   const { repository, request } = await fixture(t);
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   const response = await request(accounts.foreign.token);
   assert.equal(response.status, 404);
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 });

@@ -1,9 +1,13 @@
+import assert from "node:assert/strict";
+import { once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
+import type { Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { TestContext } from "node:test";
 import { WorkflowRepository } from "../../src/db/workflow-repository.ts";
 import type { Principal } from "../../src/repository.ts";
+import type { ConstraintEvaluation } from "../../src/queue/types.ts";
 
 export const people = {
   admin: { id: "admin-fixture", role: "admin" },
@@ -47,4 +51,60 @@ export function workflowFixture(t: TestContext) {
     rmSync(directory, { recursive: true, force: true });
   });
   return { repo, path, now, labId, enqueue };
+}
+
+export function databaseSnapshot(repository: WorkflowRepository): string {
+  const tables = repository.db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+    )
+    .all() as Array<{ name: string }>;
+  return JSON.stringify(
+    tables.map(({ name }) => [
+      name,
+      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
+    ]),
+  );
+}
+
+export async function startTestServer(
+  t: TestContext,
+  server: Server,
+  repository: WorkflowRepository,
+  directory: string,
+): Promise<number> {
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  t.after(async () => {
+    server.closeAllConnections();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    repository.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+  return address.port;
+}
+
+export async function prepareCheckedSubmission(input: {
+  repository: WorkflowRepository;
+  submit: () => unknown | Promise<unknown>;
+  now: number;
+  workerId: string;
+  evaluations: ConstraintEvaluation[];
+}): Promise<void> {
+  await input.submit();
+  const claim = input.repository.claimJob(input.workerId, {
+    now: input.now,
+    leaseMs: 30_000,
+  });
+  assert.ok(claim);
+  input.repository.recordJudgeResult(
+    claim,
+    { judgeStatus: "AC", tests: ["AC"] },
+    input.now,
+  );
+  input.repository.completeChecking(claim, input.evaluations, input.now);
 }

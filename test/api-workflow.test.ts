@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { once } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -9,6 +8,11 @@ import { createApp } from "../src/app.ts";
 import { syntheticAuthenticator } from "../src/auth.ts";
 import { WorkflowRepository } from "../src/db/workflow-repository.ts";
 import type { Principal } from "../src/repository.ts";
+import {
+  databaseSnapshot,
+  prepareCheckedSubmission,
+  startTestServer,
+} from "./helpers/workflow.ts";
 
 const now = Date.parse("2026-11-04T08:00:00.000Z");
 const accounts = {
@@ -24,20 +28,6 @@ const accounts = {
     principal: { id: "student-b", role: "student" },
   },
 } satisfies Record<string, { token: string; principal: Principal }>;
-
-function snapshot(repository: WorkflowRepository): string {
-  const tables = repository.db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-    )
-    .all() as Array<{ name: string }>;
-  return JSON.stringify(
-    tables.map(({ name }) => [
-      name,
-      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
-    ]),
-  );
-}
 
 async function fixture(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), "leetkob-api-workflow-"));
@@ -80,18 +70,7 @@ async function fixture(t: TestContext) {
     authenticate: syntheticAuthenticator(Object.values(accounts)),
     clock: () => new Date(now),
   });
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address();
-  assert.ok(address && typeof address === "object");
-  t.after(async () => {
-    server.closeAllConnections();
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    repository.close();
-    rmSync(directory, { recursive: true, force: true });
-  });
+  const port = await startTestServer(t, server, repository, directory);
   return {
     classA,
     labId,
@@ -101,7 +80,7 @@ async function fixture(t: TestContext) {
       token: keyof typeof accounts | undefined,
       options: { method?: string; body?: object } = {},
     ) =>
-      fetch(`http://127.0.0.1:${address.port}${path}`, {
+      fetch(`http://127.0.0.1:${port}${path}`, {
         method: options.method ?? "GET",
         headers: {
           ...(token === undefined
@@ -164,21 +143,21 @@ test("4B: assigned TA creates a persisted lab; foreign TA cannot create in its c
     body.statement,
   );
 
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   for (const account of ["admin", "student"] as const) {
     const denied = await request("/v1/labs", account, {
       method: "POST",
       body,
     });
     await expectProblem(denied, 403);
-    assert.equal(snapshot(repository), before);
+    assert.equal(databaseSnapshot(repository), before);
   }
   const foreign = await request("/v1/labs", "foreign", {
     method: "POST",
     body,
   });
   await expectProblem(foreign, 404);
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 });
 
 test("4B: enrolled student receives a persisted submission receipt and private judge status", async (t) => {
@@ -237,33 +216,29 @@ test("4B: enrolled student receives a persisted submission receipt and private j
     assert.equal(Object.hasOwn(body, hidden), false);
   }
 
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   const foreign = await request(
     `/v1/submissions/${receipt.submissionId}`,
     "otherStudent",
   );
   await expectProblem(foreign, 404);
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 });
 
 test("4B: only the owning TA receives persisted review queue evidence", async (t) => {
   const { labId, repository, request } = await fixture(t);
-  repository.submit(
-    accounts.student.principal,
-    labId,
-    { source: "int main() { return 0; }\n" },
+  await prepareCheckedSubmission({
+    repository,
+    submit: () =>
+      repository.submit(
+        accounts.student.principal,
+        labId,
+        { source: "int main() { return 0; }\n" },
+        now,
+      ),
     now,
-  );
-  const claim = repository.claimJob("test-worker", { now, leaseMs: 30_000 });
-  assert.ok(claim);
-  repository.recordJudgeResult(
-    claim,
-    { judgeStatus: "AC", tests: ["AC"] },
-    now,
-  );
-  repository.completeChecking(
-    claim,
-    [
+    workerId: "test-worker",
+    evaluations: [
       {
         constraintId: "C1",
         verdict: "pass",
@@ -271,8 +246,7 @@ test("4B: only the owning TA receives persisted review queue evidence", async (t
         evidence: [],
       },
     ],
-    now,
-  );
+  });
 
   const owner = await request(`/v1/labs/${labId}/reviews`, "owner");
   assert.equal(owner.status, 200);
@@ -281,30 +255,26 @@ test("4B: only the owning TA receives persisted review queue evidence", async (t
     repository.getReviewQueue(accounts.owner.principal, labId),
   );
 
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   const foreign = await request(`/v1/labs/${labId}/reviews`, "foreign");
   await expectProblem(foreign, 404);
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 });
 
 test("4B: owning TA records a review decision with 204 and rejected decisions do not mutate", async (t) => {
   const { labId, repository, request } = await fixture(t);
-  repository.submit(
-    accounts.student.principal,
-    labId,
-    { source: "int main() { return 0; }\n" },
+  await prepareCheckedSubmission({
+    repository,
+    submit: () =>
+      repository.submit(
+        accounts.student.principal,
+        labId,
+        { source: "int main() { return 0; }\n" },
+        now,
+      ),
     now,
-  );
-  const claim = repository.claimJob("test-worker", { now, leaseMs: 30_000 });
-  assert.ok(claim);
-  repository.recordJudgeResult(
-    claim,
-    { judgeStatus: "AC", tests: ["AC"] },
-    now,
-  );
-  repository.completeChecking(
-    claim,
-    [
+    workerId: "test-worker",
+    evaluations: [
       {
         constraintId: "C1",
         verdict: "pass",
@@ -312,8 +282,7 @@ test("4B: owning TA records a review decision with 204 and rejected decisions do
         evidence: [],
       },
     ],
-    now,
-  );
+  });
   const original = repository.getReviewQueue(accounts.owner.principal, labId)
     .items[0]!;
   const path = `/v1/reviews/${original.reviewId}/decision`;
@@ -336,36 +305,36 @@ test("4B: owning TA records a review decision with 204 and rejected decisions do
     1,
   );
 
-  const before = snapshot(repository);
+  const before = databaseSnapshot(repository);
   const unauthenticated = await request(path, undefined, {
     method: "POST",
     body: input,
   });
   await expectProblem(unauthenticated, 401, "authentication-required");
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 
   const wrongRole = await request(path, "student", {
     method: "POST",
     body: input,
   });
   await expectProblem(wrongRole, 403, "forbidden");
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 
   const stale = await request(path, "owner", { method: "POST", body: input });
   await expectProblem(stale, 409, "workflow-conflict");
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 
   const foreign = await request(path, "foreign", {
     method: "POST",
     body: { ...input, expectedVersion: updated.reviewVersion },
   });
   await expectProblem(foreign, 404, "not-found");
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 
   const invalid = await request(path, "owner", {
     method: "POST",
     body: { ...input, expectedVersion: "not-an-integer" },
   });
   await expectProblem(invalid, 400, "validation");
-  assert.equal(snapshot(repository), before);
+  assert.equal(databaseSnapshot(repository), before);
 });

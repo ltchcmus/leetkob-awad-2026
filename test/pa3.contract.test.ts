@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { once } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -8,6 +7,11 @@ import type { TestContext } from "node:test";
 import { createApp } from "../src/app.ts";
 import { WorkflowRepository } from "../src/db/workflow-repository.ts";
 import type { Principal } from "../src/repository.ts";
+import {
+  databaseSnapshot,
+  prepareCheckedSubmission,
+  startTestServer,
+} from "./helpers/workflow.ts";
 
 const now = Date.parse("2026-11-05T08:00:00.000Z");
 const identities = {
@@ -16,20 +20,6 @@ const identities = {
   foreign: { id: "ta-foreign", role: "ta" },
   student: { id: "student-1", role: "student" },
 } satisfies Record<string, Principal>;
-
-function databaseSnapshot(repository: WorkflowRepository): string {
-  const tables = repository.db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-    )
-    .all() as Array<{ name: string }>;
-  return JSON.stringify(
-    tables.map(({ name }) => [
-      name,
-      repository.db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all(),
-    ]),
-  );
-}
 
 async function fixture(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), "leetkob-pa3-contract-"));
@@ -61,18 +51,7 @@ async function fixture(t: TestContext) {
     },
     clock: () => new Date(now),
   });
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address();
-  assert.ok(address && typeof address === "object");
-  t.after(async () => {
-    server.closeAllConnections();
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    repository.close();
-    rmSync(directory, { recursive: true, force: true });
-  });
+  const port = await startTestServer(t, server, repository, directory);
   return {
     classId,
     labId,
@@ -82,7 +61,7 @@ async function fixture(t: TestContext) {
       token: keyof typeof identities | undefined,
       options: { method?: string; body?: object } = {},
     ) =>
-      fetch(`http://127.0.0.1:${address.port}${path}`, {
+      fetch(`http://127.0.0.1:${port}${path}`, {
         method: options.method ?? "GET",
         headers: {
           ...(token === undefined ? {} : { Authorization: `Bearer ${token}` }),
@@ -285,20 +264,12 @@ test("G1 proposed: student status exposes only the final judge verdict before Pu
 
 test("G1 proposed: owning TA can read its persisted flat review queue", async (t) => {
   const { labId, repository, request } = await fixture(t);
-  await submit(request, labId);
-  const claim = repository.claimJob("g1-test-worker", {
+  await prepareCheckedSubmission({
+    repository,
+    submit: () => submit(request, labId),
     now,
-    leaseMs: 30_000,
-  });
-  assert.ok(claim);
-  repository.recordJudgeResult(
-    claim,
-    { judgeStatus: "AC", tests: ["AC"] },
-    now,
-  );
-  repository.completeChecking(
-    claim,
-    [
+    workerId: "g1-test-worker",
+    evaluations: [
       {
         constraintId: "C1",
         verdict: "pass",
@@ -306,8 +277,7 @@ test("G1 proposed: owning TA can read its persisted flat review queue", async (t
         evidence: [],
       },
     ],
-    now,
-  );
+  });
   const response = await request(`/v1/labs/${labId}/reviews`, "own");
   assert.equal(response.status, 200);
   assert.deepEqual(
@@ -318,20 +288,12 @@ test("G1 proposed: owning TA can read its persisted flat review queue", async (t
 
 test("G1 proposed: a foreign TA cannot read a persisted review queue and leaves the database unchanged", async (t) => {
   const { labId, repository, request } = await fixture(t);
-  await submit(request, labId);
-  const claim = repository.claimJob("g1-test-worker", {
+  await prepareCheckedSubmission({
+    repository,
+    submit: () => submit(request, labId),
     now,
-    leaseMs: 30_000,
-  });
-  assert.ok(claim);
-  repository.recordJudgeResult(
-    claim,
-    { judgeStatus: "AC", tests: ["AC"] },
-    now,
-  );
-  repository.completeChecking(
-    claim,
-    [
+    workerId: "g1-test-worker",
+    evaluations: [
       {
         constraintId: "C1",
         verdict: "pass",
@@ -339,8 +301,7 @@ test("G1 proposed: a foreign TA cannot read a persisted review queue and leaves 
         evidence: [],
       },
     ],
-    now,
-  );
+  });
   const owner = await request(`/v1/labs/${labId}/reviews`, "own");
   assert.equal(owner.status, 200);
   const before = databaseSnapshot(repository);
