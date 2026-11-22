@@ -1,5 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { Problem } from "./problem.ts";
+import { applyMigrations } from "./db/migrate.ts";
+import { assertWorkflowReady } from "./db/publication-readiness.ts";
 
 export interface Principal {
   id: string;
@@ -82,8 +84,14 @@ export class PublicationRepository {
 
   constructor(path: string) {
     this.db = new DatabaseSync(path);
-    this.db.exec("PRAGMA busy_timeout = 250;");
-    this.db.exec(schema);
+    try {
+      this.db.exec("PRAGMA busy_timeout = 250;");
+      this.db.exec(schema);
+      applyMigrations(this.db);
+    } catch (error) {
+      this.db.close();
+      throw error;
+    }
   }
 
   close(): void {
@@ -138,6 +146,7 @@ export class PublicationRepository {
         )
         .get(labId);
       if (pendingJudge) throw new Problem("judging-pending");
+      assertWorkflowReady(this.db, labId);
       const pendingReview = this.db
         .prepare(
           `SELECT 1 FROM review_items r

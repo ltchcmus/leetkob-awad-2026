@@ -563,3 +563,353 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - A fresh clone at `0824360` was checked out at the annotated `pa2` tag. The candidate ZIP included `.git/`, code, tests, Markdown evidence and release metadata without `node_modules/` or local databases.
 - After extracting the candidate ZIP, `git fsck --full` passed; `npm ci`, lint, format check, typecheck and all 26 tests passed. Git status was clean. The final ZIP was extracted again and its Git objects, tag, commit and metadata verified.
 - This entry records the completed verification of **candidate SHA `0824360`**. If documentation is committed after that SHA, the final release SHA and its new Gitleaks/CI/ZIP evidence are recorded separately in the new archive's `.git/pa2-release-verification.json`.
+
+## 21 November 2026 — Durable submission storage: contract and regression tests
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Review the proposed submission, queue and review interfaces; preserve
+PA2 publishing; implement durable storage with lease recovery and duplicate-result
+protection, and prepare integration verification.
+
+**Kept:** The existing HTTP publication contract and table shapes, integer tenths
+for scores, short SQLite transactions, and separate sandbox/checker adapters.
+
+**Changed:** The proposed boundary now separates job lifecycle from judge result,
+submission retries from execution attempts, and checker readiness from an empty
+review queue. Reading `PublicationRepository.publish` showed that absent review
+rows alone could not represent incomplete checking. Added regression cases for
+that state, fencing stale workers, rollback, admission retries and resubmissions.
+
+**Rejected:** Treating sandbox infrastructure failure as student `WA`/`RE`,
+overwriting counted results from an older submission, or claiming the initial
+regression run exercised assertions that could not yet load.
+
+**Validation:** On base `1c194cd`, Node 24.11.0: `npm ci`, lint,
+format check, typecheck and all 26 existing tests passed. The first new regression
+run exited 1 because `src/db/workflow-repository.ts` did not yet exist; no new
+behavioral assertion ran in that first run. Tests and the storage contract were
+recorded before production implementation. The locally installed Node 25 was
+replaced for these commands by a portable 24.11.0 executable verified against the
+official SHA-256. Fetch reported a differing local `pa2` tag; it was preserved.
+
+### Durable storage implementation and verification
+
+**Changed:** Added a checksum-tracked migration that leaves the seven PA2 tables
+and their positional fixtures intact. New storage persists identities, classes,
+enrollment, lab content, immutable submissions, jobs/attempts, verdict sets,
+reviews/audit and provider-call metadata. A counted-head pointer prevents older
+jobs from overwriting the latest attempt. Publish also checks checker and review
+initialization. No model output supplies a score.
+
+**Found and corrected:** Three new tests initially failed during Windows cleanup
+because their extra SQLite connection was still open; fixed connection cleanup
+in its own commit, without weakening assertions. A later regression genuinely
+failed because an empty/contradictory AC test list was accepted. Production code
+now requires all configured tests to pass before recording AC.
+
+**Validation:** Node 24.11.0: lint, format check, typecheck and all 46 tests pass
+(26 existing + 20 new storage regressions). The tests cover persisted recovery,
+lease fencing, bounded infrastructure retries, duplicate completion, transaction
+rollback, checker-pending publication, review authorization/versioning, source
+size limits and migration compatibility. No sandbox payload or model call ran.
+
+## 21 November 2026 — Separate worker and recovery boundary
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Implement the separate worker/review integration boundary and
+prepare acceptance tests while the sandbox and API owners build their adapters.
+
+**Kept:** An explicit trusted adapter module, persisted AC checkpoint, conditional
+lease renewal and fencing at every result write. The checker input contains only
+its documented fields; provider sanitization remains in the checker adapter.
+
+**Changed:** A weak null-output test initially passed because its wrong constraint
+count hit another guard. Changed it to the correct count with null entries, saw
+`retry` instead of the required TA-only `unsure`, and fixed entry validation.
+The stronger test was committed before the fix. Test expectations were not loosened.
+
+**Rejected:** Selecting a fake adapter when production configuration is absent,
+equating a worker-side timeout with proof of container cleanup, or counting an
+offline orchestration fixture as a real C++/model run.
+
+**Validation:** Worker tests were committed before the production worker; their
+first run exited 1 because the worker module did not exist. The implementation
+passes ten worker tests, including two using a separate Node process. Stop,
+enqueue, restart and crash/recover both leave one persisted verdict set. All 56
+tests and the four project quality checks pass on Node 24.11.0. Docker CLI is
+installed but its Linux daemon is unavailable on this machine; no nine-minimum
+sandbox verification or deployment walkthrough is claimed.
+
+## 21 November 2026 — HTTP acceptance preparation and product policy
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Prepare integration QA before the full product walkthrough.
+
+**Kept:** Paired happy/negative cases, direct HTTP requests to the real application,
+and the Product Owners FAQ pinned at `2b82b90`.
+
+**Changed:** Replaced the earlier missing-FAQ assumption with verified entries.
+Added five HTTP checks covering pending judging, AC with no initialized reviews,
+pending human decisions, role/class isolation and successful publication/replay.
+The public acceptance runbook explicitly separates these checks from the later
+lab-creation/submission/deployment walkthrough.
+
+**Rejected:** Claiming that injection-free fixture authentication or an offline
+checker proves deployed authentication, model quality or sandbox security.
+
+**Validation:** All five new HTTP integration cases pass on Node 24.11.0; strict
+type checking passes. The full public walkthrough awaits the API routes and
+reviewed sandbox/checker adapters. No public QA sign-off has been fabricated.
+
+## 21 November 2026 — Additional evaluation cases and integrity baseline
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Asked for:** Prepare at least five independently labelled and tagged cases and
+protect the official evaluation data before the real-model run.
+
+**Kept:** Separate official/own-case layouts, original source-line evidence and
+labels derived from the declared constraints before observing checker predictions.
+
+**Changed:** Added five sorting cases covering honest recursive/bottom-up merge
+sort, comment/string and own-namespace traps, a library-sort injection, and bubble
+sort disguised by its function name. Added complete-pair/label/tag/evidence tests
+and a byte-integrity verifier. Downloaded the official commit `552c811` into a
+temporary review location; all 128 hashes are recorded, with evaluator/label
+prefixes cross-checked against the rubric. No official file was edited.
+
+**Rejected:** Generating predictions from labels or declaring cases Accepted
+without compiling/running them inside the reviewed sandbox.
+
+**Validation:** Structural own-case checks pass. Hậu's label ACK, sandbox Accepted
+verification and real checker/model runs remain pending and are stated in the
+case README. No model prediction or provider call log has been fabricated.
+
+### Storage audit — legacy class IDs
+
+**Changed:** Audit found that allocating a new class ID solely from the new
+`classes` table could reuse an ID already present in legacy labs/TA assignments,
+granting access to unrelated old labs. A regression failed with that exact
+collision. Allocation now includes all legacy class IDs, and the review query
+also filters current membership in the same statement that reads its rows.
+The regression was committed before the production fix; no fixture or expected
+authorization outcome was loosened.
+
+### Final local checks
+
+On source commit `6a2b055`, all four quality checks pass and all 65 tests pass
+with zero failures or skips. Gitleaks 8.30.1 scanned all reachable history (36
+commit patches) and a tracked-source snapshot; both exited 0 with no findings.
+The official integrity verifier also passed for all 128 published files. The
+verification record distinguishes local results from pending real-adapter and
+deployment work. No remote approval, push, CI run or team sign-off is claimed.
+
+## 21 November 2026 — Linux CI crash-recovery fixture
+
+Owner: Thịnh (23120200), assisted by Codex; publication authorized by Thịnh.
+
+**Observed:** After publishing draft PR #16, the first Linux
+[CI run](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/44898867978)
+passed lint, formatting and type checking but failed the crash/restart case:
+one execution attempt existed where two were expected. The same suite had passed
+on Windows.
+
+**Changed:** The fixture used default SIGTERM. Linux executes the worker's
+graceful shutdown handler, scheduling a delayed retry; Windows terminates that
+child abruptly. The crash case now explicitly sends SIGKILL, asserts the
+interrupted attempt is still active and leased, waits for the persisted lease
+deadline, and requires outcomes `lease_expired` then `completed`.
+
+**Rejected:** Weakening the expected attempt/verdict counts, changing production
+retry timing to suit the fixture, or rerunning CI without investigating the cause.
+The corrected stimulus and stronger assertions preserve the original contract.
+
+**Local validation:** Node 24.11.0: lint, formatting, typecheck and all 65 tests
+pass after the correction. Both process lifecycle tests pass. Linux CI validation
+is tracked on draft PR #16; the original failing run remains linked above.
+
+### SonarCloud follow-up
+
+The corrected crash test passed in Linux
+[Quality run 44899082079](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/44899082079),
+including all 65 tests. SonarCloud separately failed its reliability gate on the
+validator's implicit string sort. Added an explicit locale comparator, extracted
+validator and worker stages into smaller helpers, and moved the five existing
+HTTP test bodies into their discovered test file so analysis sees the real tests.
+The assertions, fixtures, labels and migration bytes are unchanged.
+
+Also applied optional/nullish expressions and top-level await suggested by the
+analyzer. Deliberately retained sequential worker polling: parallel claims would
+change its lifecycle contract. Sonar's PL/SQL duplicate-literal suggestions do not
+apply to immutable SQLite CHECK constraints; no analyzer exclusions, quality-gate
+thresholds or migration checksum changes were used to silence those suggestions.
+
+## 2026-11-21 - PA#3 proposed contract amendment
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Define final student judge-verdict visibility, hard-rule/model checker and CLI adapter proposals, and strengthen contract tests without production changes before user-approved commit.
+
+**Kept:**
+
+- PA#2 publish semantics and all production handlers.
+- The original test-first contract commit `2e6211ee3684ed4964f2051ff6fb1a8d95b0d3a5` without amend or rewrite.
+- Proposed/PENDING status for Product Owners FAQ, Cong and Thinh decisions.
+
+**Changed:**
+
+- Updated the student status contract to return final `judgeVerdict` values `AC`, `WA`, `TLE`, `MLE`, `RE` or `CE`, while hiding constraint verdicts, deductions and internal evidence before Publish.
+- Added a proposed checker input/output boundary, hard-rule precedence, one-based original C++ evidence lines, deduction conversion and JSONL dataset-adapter semantics.
+- Strengthened contract tests with explicit hidden-field assertions and an owning-TA route assertion before the foreign-TA review negative case.
+
+**Rejected:**
+
+- Implementing the hard-rule engine, worker, CLI, sandbox or PA#3 HTTP handlers.
+- Mocking a fake HTTP response or changing expected results to make the contract tests pass.
+- Declaring unacknowledged interfaces frozen.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm run lint`, `npm run format:check` and `npm run typecheck` exited 0.
+- `npm test` exited 1 with 27 passing tests and 5 expected contract-first RED tests. Each RED is an absent PA#3 endpoint returning 404 where the proposed contract requires owning-TA lab 200, submission 202, student status 200, owning-TA review queue 200, or the owner precondition of the foreign-TA review test.
+- `git diff --check` passed. No production file was changed.
+
+**Pending:**
+
+- Product Owners FAQ: post-Publish student visibility.
+- Thinh: queue/review state, scoring aggregation, rounding and persistence.
+- Cong: model boundary and final CLI/Docker packaging.
+
+## 2026-11-21 - TA lab-read API completion
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Complete the remaining TA lab-read HTTP contract without changing the existing
+PA#2 publication behavior.
+
+**Changed:**
+
+- Added a read-only `WorkflowRepository.getLabForTa` method. It reuses the
+  existing TA ownership guard and reads only the lab ID, class ID and statement.
+- Added `GET /v1/labs/{labId}`. The route authenticates before access, returns
+  200 only to an owning TA, and exposes no tests, constraints or internal data.
+- Added contract coverage for a request without credentials and Student/Admin
+  requests. Rejected requests preserve the persisted database snapshot.
+
+**Rejected:**
+
+- Direct SQL or ownership decisions in the HTTP layer.
+- Returning lab testcases, constraints, submissions, review data or checker data.
+- Changing PA#2 Publish behavior, schema, migrations, queue logic or existing
+  G1 authorization assertions.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 79 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-21 - G4 security and integration audit
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Audit the G4 HTTP boundary for authorization, ownership isolation, request
+normalization, submission admission, review decisions, status privacy and PA#2
+publication compatibility.
+
+**Changed:**
+
+- The submission route now has its own 64 KiB transport limit, while Publish
+  keeps its existing 4 KiB limit.
+- New mutation-route role gates run before body validation. A caller with an
+  ineligible role receives 403 and cannot use malformed input to change the
+  authorization response.
+- Added regression tests for both findings; rejected requests preserve the
+  database snapshot.
+
+**Rejected:**
+
+- Changing G2 persistence semantics, migrations, queue/worker behavior,
+  checker code, or PA#2 publication assertions.
+- Treating a permissive UUID-shaped route matcher or a generic problem-detail
+  wording as a demonstrated data-disclosure defect.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 81 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-21 - Submission HTTP body-limit boundary
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, portable Node.js 24.11.0, npm and the native Node test runner.
+
+**Asked for:**
+
+Separate the HTTP transport allowance for a submission from the persisted
+maximum source size, while preserving the PA#2 publication body limit.
+
+**Changed:**
+
+- Raised only the submission HTTP transport limit to 524,288 bytes. The
+  repository still rejects source text above 65,536 UTF-8 bytes.
+- Made the 413 detail derive from the route's actual byte limit. Publish still
+  returns the established 4,096-byte detail; Submission reports 524,288 bytes.
+- Added regression tests for a valid 65,536-byte source whose JSON envelope is
+  larger, an oversized source rejected by repository validation, and an
+  oversized submission transport body rejected with the correct 413 detail.
+
+**Rejected:**
+
+- Changing the repository source-size boundary, schema, migrations, PA#2
+  publication behavior, or any checker/queue/model implementation.
+
+**Validation:**
+
+- Node.js 24.11.0: `npm test` passed 83 tests with zero failures or skips.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, and the direct
+  26-test PA#2 authentication/publication regression command all exited 0.
+- `git diff --check` exited 0. No commit, push or merge was performed.
+
+## 2026-11-22 - Test fixture duplication refactor
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js and npm.
+
+**Asked for:** Reduce verified SonarCloud duplicate test blocks without changing
+HTTP contracts, test scenarios or production behavior.
+
+**Changed:** Moved the repeated SQLite snapshot, HTTP server lifecycle and
+accepted-submission checking setup into focused helpers in
+`test/helpers/workflow.ts`. The API authorization, workflow and PA3 contract
+tests retain their own identities, persisted fixture setup, cleanup and
+assertions.
+
+**Rejected:** Editing production code, checker code, migrations, CI settings,
+SonarCloud settings, test assertions or test scenarios to change the quality
+result.
+
+**Validation:** On Node.js 24.11.0, `npm test` passed all 83 tests. The direct
+PA2 authentication/publication regression command passed all 26 tests. Lint,
+typecheck, format check and `git diff --check` exited 0. No commit, push or
+merge was performed.

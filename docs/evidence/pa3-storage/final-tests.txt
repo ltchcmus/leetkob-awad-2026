@@ -1,0 +1,87 @@
+
+> leetkob-pa2@0.1.0 test
+> node --test --test-reporter=spec test/*.test.ts
+
+✔ demo authentication fails closed and never accepts fixture identities or supplied roles (4.7418ms)
+✔ own evaluation cases have complete labels, evidence, tests, trap and injection tags (4.6816ms)
+✔ own-case validation rejects duplicated pairs and invalid evidence (68.177ms)
+✔ official integrity verifier catches a byte change without modifying published data (3.7627ms)
+(node:29528) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ integration: direct Publish refuses queued judging with no database mutation (747.3895ms)
+✔ integration: direct Publish refuses AC before checker initialization, with zero review rows (759.7406ms)
+✔ integration: pending TA decisions refuse Publish after the checker finishes (791.6461ms)
+✔ integration: student and foreign TA direct requests cannot publish or learn lab existence (677.0399ms)
+✔ integration: completed human review permits one persistent HTTP publication (825.4069ms)
+(node:30032) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ §§3-4: publish snapshots prepared marks and records exactly one auditable receipt (478.6121ms)
+✔ §4: repeated POST is 200 and byte-identical, including another assigned TA and changed clock (439.399ms)
+✔ §§1-2: missing/invalid credentials are 401 and advertise Bearer (395.5475ms)
+✔ §1: students and admins are 403; neither is a TA bypass (404.3356ms)
+✔ §§1,4: foreign TA and missing lab have identical non-disclosing 404 bodies (396.9985ms)
+✔ §4: published receipts do not bypass revoked class ownership (427.2072ms)
+✔ §4: ownership is checked again inside the write transaction (419.595ms)
+✔ §§1-2: invalid IDs, trailing slash and unknown routes are safe 404 problems (400.2153ms)
+✔ §§1-2: raw dot-segment path is a safe 404 and cannot publish a different lab (384.5916ms)
+✔ §2: wrong method is 405 with Allow POST (294.3406ms)
+✔ §2: malformed or empty JSON is invalid-json, not a server failure (294.2159ms)
+✔ §§2,4: non-object JSON and every query name get validation field errors (305.2114ms)
+✔ §4: byte limit rejects >4096 bytes, accepts exactly 4096 and counts UTF-8 bytes (455.0936ms)
+✔ §4: only JSON UTF-8 and identity encoding are accepted (302.1456ms)
+✔ §4: one millisecond before deadline is 409; exact deadline succeeds (314.7731ms)
+✔ §4: queued/running judges block before review check; failed attempts can later succeed (305.3824ms)
+✔ §4: every undecided required review blocks; deciding it allows publication (237.0138ms)
+✔ §4: an empty lab can publish; another class pending item cannot block an owned lab (259.8002ms)
+✔ §4: 24 simultaneous requests converge on one publication, marks snapshot and audit event (244.3636ms)
+✔ §4: independent reopened store replays persisted receipt without generating a new timestamp (214.1192ms)
+✔ §§2,4: write contention is safe 503 with Retry-After; retry succeeds after release (572.3162ms)
+✔ §§2,4: exclusive lock during access check is safe 503 with no partial write and retry succeeds (820.3777ms)
+✔ §§2,4: audit failure rolls back receipt and marks; retry succeeds with no partial state (259.0311ms)
+✔ §2: unexpected identity adapter exception is a generic 500 without its secret (213.1017ms)
+✔ §4: invalid replay input remains invalid and leaves one audit event (233.1619ms)
+(node:18284) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ migration upgrades an existing PA2 file without changing its rows or receipt (421.1576ms)
+✔ submission admission atomically stores source, lab data, head and durable job (669.0406ms)
+✔ idempotency survives another connection and conflicts cannot mutate data (683.6945ms)
+✔ admission failure rolls back receipt, source and counted head (708.1869ms)
+✔ new admission stops at the deadline but an authorized receipt can replay (727.758ms)
+✔ separate connections claim once; expired leases recover with a new fenced attempt (668.9988ms)
+✔ heartbeats extend a current lease but cannot resurrect an expired lease (531.9664ms)
+✔ sandbox infrastructure errors retry without fabricating a student verdict (698.701ms)
+✔ exhausted infrastructure retries remain failed processing and block Publish (576.5101ms)
+✔ non-AC finishes without invoking or initializing a model verdict set (392.9499ms)
+✔ AC with checker pending blocks Publish even before review rows exist (372.3904ms)
+✔ atomic verdict persistence rolls back all rows and duplicate completion never overwrites (398.6799ms)
+✔ incomplete or duplicate checker constraints cannot initialize reviews (344.9964ms)
+✔ TA review records evidence and audit; only configured deductions prepare marks (272.1645ms)
+✔ review ownership and optimistic versions deny updates without side effects (350.7187ms)
+✔ a late old result cannot replace a newer counted submission (295.0618ms)
+✔ deleting initialized review rows fails closed instead of publishing an empty queue (305.7834ms)
+✔ a recovered AC job resumes checking without losing its persisted judge result (422.7275ms)
+✔ an incomplete or contradictory AC result cannot advance the pipeline (317.7213ms)
+✔ admission size and unauthorized class creation fail without creating jobs (218.2832ms)
+✔ new classes never reuse a legacy class ID and inherit its private labs (248.0332ms)
+(node:27448) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ worker checks only AC and persists one complete set without identity in checker input (789.554ms)
+✔ worker never calls the checker for a non-AC submission (764.9843ms)
+✔ sandbox engine errors and thrown failures retry without becoming WA or RE (800.3521ms)
+✔ checker outage retries the persisted AC checkpoint rather than running C++ again (868.7271ms)
+✔ an invalid checker protocol becomes unsure with a reason, never a deduction (685.4365ms)
+✔ null checker entries are schema failures rather than infrastructure retries (570.0324ms)
+✔ worker watchdog aborts a stalled sandbox adapter and retries infrastructure (728.703ms)
+✔ worker discards a result after another worker has recovered its lease (534.6837ms)
+(node:26820) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ separate worker stopped then restarted processes a durable submission exactly once (1128.2615ms)
+✔ crashing a leased worker recovers after restart without duplicate persisted verdicts (1674.2352ms)
+ℹ tests 65
+ℹ suites 0
+ℹ pass 65
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9874.2925

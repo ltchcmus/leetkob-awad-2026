@@ -28,6 +28,11 @@ export const problems = {
     "Reviews pending",
     "Required TA reviews are not complete.",
   ],
+  "workflow-conflict": [
+    409,
+    "Workflow conflict",
+    "The workflow state no longer accepts this action.",
+  ],
   "payload-too-large": [
     413,
     "Payload too large",
@@ -53,10 +58,12 @@ export type FieldError =
 export class Problem extends Error {
   readonly kind: ProblemKind;
   readonly errors: FieldError[] | undefined;
+  readonly detail: string | undefined;
 
-  constructor(kind: ProblemKind, errors?: FieldError[]) {
-    super(problems[kind][2]);
+  constructor(kind: ProblemKind, errors?: FieldError[], detail?: string) {
+    super(detail ?? problems[kind][2]);
     this.kind = kind;
     this.errors = errors;
+    this.detail = detail;
   }
 }
