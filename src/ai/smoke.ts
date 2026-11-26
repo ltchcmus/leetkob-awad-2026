@@ -3,12 +3,14 @@ import type { CallLog, SemanticInput } from "./types.ts";
 
 const providers = {
   gemini: {
-    model: "gemini-3.8-flash",
-    pricingSource: "https://aistudio.google.com/docs/pricing#gemini-3.8-flash",
+    "gemini-3.8-flash":
+      "https://aistudio.google.com/docs/pricing#gemini-3.8-flash",
+    "gemini-3.1-flash-lite":
+      "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
   },
   nvidia: {
-    model: "moonshotai/kimi-k3.1-pro",
-    pricingSource: "https://docs.api.nvidia.com/nim/docs/api-quickstart",
+    "moonshotai/kimi-k3.1-pro":
+      "https://build.nvidia.com/moonshotai/kimi-k3_1-pro/build",
   },
 };
 type Provider = keyof typeof providers;
@@ -26,8 +28,18 @@ export async function runProviderSmoke(
   env: Readonly<Record<string, string | undefined>>,
   fetcher: typeof fetch = fetch,
 ) {
-  const { model, pricingSource } = providers[provider];
   const prefix = provider.toUpperCase();
+  const approved = Object.entries(providers[provider]).find(
+    ([model]) => model === env[prefix + "_MODEL"],
+  );
+  if (!approved)
+    return {
+      provider,
+      status: "blocked",
+      calls: 0,
+      reason: "smoke_model_mismatch",
+    } as const;
+  const [model, pricingSource] = approved;
   const blocked = {
     provider,
     modelRequested: model,
@@ -35,8 +47,6 @@ export async function runProviderSmoke(
     status: "blocked",
     calls: 0,
   } as const;
-  if (env[prefix + "_MODEL"] !== model)
-    return { ...blocked, reason: "smoke_model_mismatch" };
   if (env[prefix + "_CONCURRENCY"] !== "1")
     return { ...blocked, reason: "smoke_concurrency_must_be_one" };
 

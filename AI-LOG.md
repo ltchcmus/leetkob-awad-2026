@@ -633,3 +633,27 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - Treating fallback dispatch or a guarded `unsure` as a successful model
   verdict. Retained the failures and unavailable usage and billing fields in
   the evidence.
+
+## 2026-11-27 — Recover semantic inference on a smaller model
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, and npm.
+
+**Changed**
+
+- Ran three small text diagnostics and two real semantic smokes. Selected
+  Gemini 3.1 Flash-Lite after both smokes passed the existing schema,
+  deadline, and exact evidence checks. Recorded provider response IDs,
+  token usage, latency, and the free-tier pricing basis.
+- Extended the manual runner to recognize the selected model and its
+  pricing source. Its Gemini adapter requests the documented minimal
+  thinking setting.
+- Lint, format, typecheck and all 58 repository tests passed, including 32
+  offline model tests.
+
+**Rejected**
+
+- Treating HTTP 200 from a text diagnostic as semantic evidence or selecting
+  the NVIDIA alternatives that returned HTTP 410. The selected profile
+  leaves fallback disabled.

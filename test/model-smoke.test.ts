@@ -139,3 +139,33 @@ test("configured Gemini 503 routes once through the NVIDIA adapter", async () =>
   );
   assert.equal(logs[0]?.correlationId, logs[1]?.correlationId);
 });
+
+test("manual smoke runs the selected Gemini replacement with minimal thinking", async () => {
+  const model = "gemini-3.1-flash-lite";
+  let thinkingLevel: string | undefined;
+  const evidence = await runProviderSmoke(
+    "gemini",
+    {
+      ...env,
+      GEMINI_MODEL: model,
+      GEMINI_FREE_VERIFIED_MODEL: model,
+    },
+    async (_url, init) => {
+      thinkingLevel = JSON.parse(String(init?.body)).generationConfig
+        .thinkingConfig.thinkingLevel;
+      return Response.json({
+        candidates: [
+          { finishReason: "STOP", content: { parts: [{ text: valid }] } },
+        ],
+      });
+    },
+  );
+  assert.equal(thinkingLevel, "MINIMAL");
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.calls, 1);
+  assert.equal(evidence.modelRequested, model);
+  assert.equal(
+    evidence.pricingSource,
+    "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
+  );
+});

@@ -7,6 +7,12 @@ export function gemini(
   quota: Quota,
   fetcher: typeof fetch = fetch,
 ): ModelProvider {
+  const thinkingLevel =
+    model === "gemini-3.8-flash"
+      ? "LOW"
+      : model === "gemini-3.1-flash-lite"
+        ? "MINIMAL"
+        : undefined;
   return {
     id: "gemini",
     model,
@@ -21,9 +27,7 @@ export function gemini(
           generationConfig: {
             maxOutputTokens: request.maxOutputTokens,
             responseMimeType: "application/json",
-            ...(model === "gemini-3.8-flash" && {
-              thinkingConfig: { thinkingLevel: "LOW" },
-            }),
+            ...(thinkingLevel && { thinkingConfig: { thinkingLevel } }),
           },
         },
         signal,

@@ -1,0 +1,146 @@
+{
+  "testedBaseSha": "c56db2682c655153699fc3f5117e52b8c72bcc59",
+  "realCallCount": 5,
+  "successfulSemanticInferenceCount": 2,
+  "diagnostics": [
+    {
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-lite",
+      "kind": "plain_text_diagnostic",
+      "timestamp": "2026-11-26T20:05:10.520Z",
+      "estimatedCostUsd": 0,
+      "httpStatus": 200,
+      "headerLatencyMs": 34260,
+      "requestId": null,
+      "retryAfter": null,
+      "actualModel": "gemini-3.1-flash-lite",
+      "responseId": "9pAIa53VJ_qF3LUPm4Cd4Aw",
+      "finishReason": "STOP",
+      "providerErrorCode": null,
+      "usage": {
+        "input": 6,
+        "output": 2,
+        "reasoning": null
+      },
+      "success": false,
+      "tlsProtocol": "TLSv1.3",
+      "latencyMs": 34263
+    },
+    {
+      "provider": "nvidia",
+      "model": "openai/gpt-oss-20b",
+      "kind": "plain_text_diagnostic",
+      "timestamp": "2026-11-26T20:05:44.785Z",
+      "estimatedCostUsd": 0,
+      "httpStatus": 410,
+      "headerLatencyMs": 387,
+      "requestId": "d3ce17e3-7b45-46b7-9d7f-12f6fd23928b",
+      "retryAfter": null,
+      "actualModel": null,
+      "responseId": null,
+      "finishReason": null,
+      "providerErrorCode": null,
+      "usage": null,
+      "success": false,
+      "tlsProtocol": "TLSv1.3",
+      "latencyMs": 387
+    },
+    {
+      "provider": "nvidia",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "kind": "plain_text_diagnostic",
+      "timestamp": "2026-11-26T20:06:59.836Z",
+      "estimatedCostUsd": 0,
+      "httpStatus": 410,
+      "headerLatencyMs": 405,
+      "requestId": "da439df7-b4a6-46b5-9284-7b8a3c86aa09",
+      "retryAfter": null,
+      "actualModel": null,
+      "responseId": null,
+      "finishReason": null,
+      "providerErrorCode": null,
+      "usage": null,
+      "success": false,
+      "tlsProtocol": "TLSv1.3",
+      "latencyMs": 405
+    }
+  ],
+  "semanticRuns": [
+    {
+      "provider": "gemini",
+      "modelRequested": "gemini-3.1-flash-lite",
+      "modelActual": "gemini-3.1-flash-lite",
+      "timestamp": "2026-11-26T20:06:17.623Z",
+      "correlationId": "fcb29c76-6e67-410a-90c8-ecec3ca1ce03",
+      "providerRequestId": null,
+      "providerResponseId": "OZEIa_WTLLSsg8UP1eKkkQY",
+      "usage": {
+        "inputTokens": 150,
+        "outputTokens": 64
+      },
+      "latencyMs": 4882,
+      "httpStatus": 200,
+      "calls": 1,
+      "status": "pass",
+      "result": {
+        "constraintId": "returns-two",
+        "verdict": "violation",
+        "source": "model",
+        "evidence": [
+          {
+            "line": 2,
+            "text": "  return 1;"
+          }
+        ]
+      },
+      "evidenceValidation": "passed",
+      "expectedEvidence": true,
+      "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
+      "accessTier": "owner_attested_free",
+      "estimatedCost": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "actualBillingEvidence": null
+    },
+    {
+      "provider": "gemini",
+      "modelRequested": "gemini-3.1-flash-lite",
+      "modelActual": "gemini-3.1-flash-lite",
+      "timestamp": "2026-11-26T20:07:11.808Z",
+      "correlationId": "ff76b7d7-bfcb-4b75-a162-11da2a95dd52",
+      "providerRequestId": null,
+      "providerResponseId": "b5EIa8__NrOy694PxbrCoAY",
+      "usage": {
+        "inputTokens": 150,
+        "outputTokens": 64
+      },
+      "latencyMs": 2745,
+      "httpStatus": 200,
+      "calls": 1,
+      "status": "pass",
+      "result": {
+        "constraintId": "returns-two",
+        "verdict": "violation",
+        "source": "model",
+        "evidence": [
+          {
+            "line": 2,
+            "text": "  return 1;"
+          }
+        ]
+      },
+      "evidenceValidation": "passed",
+      "expectedEvidence": true,
+      "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
+      "accessTier": "owner_attested_free",
+      "estimatedCost": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "actualBillingEvidence": null
+    }
+  ],
+  "selectedPrimaryModel": "gemini-3.1-flash-lite",
+  "selectedFallbackModel": null
+}

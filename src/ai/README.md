@@ -15,8 +15,8 @@ environment or secret store. Start from this disabled configuration.
 ```dotenv
 MODEL_OFF=1
 LLM_PRIMARY=gemini
-LLM_FALLBACK=nvidia
-GEMINI_MODEL=gemini-3.8-flash
+LLM_FALLBACK=
+GEMINI_MODEL=gemini-3.1-flash-lite
 GEMINI_API_KEY=
 NVIDIA_MODEL=moonshotai/kimi-k3.1-pro
 NVIDIA_API_KEY=
@@ -49,6 +49,12 @@ operator attestation. The adapter has no account billing API. An unverified
 provider is unavailable for routing. Recheck on a change of credential, model,
 account, or tier. Rotate credentials for normal credential management within
 the same quota policy.
+
+Gemini 3.1 Flash-Lite passed two real semantic smoke runs. The selected
+profile leaves fallback empty until a second model passes an independent
+check. The run uses the standard text free tier confirmed by the owner.
+[Pricing](https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite)
+· [Recovery evidence](recovery-evidence.json)
 
 ## Worker and checker integration
 

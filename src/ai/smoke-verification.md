@@ -76,6 +76,37 @@ correlation IDs, timing, and outcomes are in [the call evidence](smoke-evidence.
   [Gemini pricing](https://aistudio.google.com/docs/pricing#gemini-3.8-flash)
   · [NVIDIA prototype endpoint](https://build.nvidia.com/moonshotai/kimi-k3_1-pro/build)
 
+## Model recovery and selection
+
+The follow-up on 2026-11-27 ICT ran three text diagnostics and two semantic
+smokes, one request at a time. Node negotiated TLS 1.3 on both providers, and
+no proxy or TLS override variable was present in the test shell. Text
+diagnostics used a separate 60-second timeout and never count as constraint
+evidence. The diagnostic for `gemini-3.1-flash-lite` returned HTTP 200 after
+34.263 seconds, with output tokens but without the exact requested reply.
+This shows the inference endpoint responded and can exceed the checker
+deadline. The cause of the original model's timeout or 503 remains unknown.
+
+The selected primary is `gemini-3.1-flash-lite`. With the supported
+`MINIMAL` thinking setting and the existing 30-second checker deadline, both
+semantic attempts passed schema and evidence validation. They returned
+`violation` at source line 2 in 4.882 and 2.745 seconds. Each reported 150
+input and 64 output tokens. Provider response IDs are available. Provider
+request IDs and actual billing are unavailable. The estimate is USD 0 on the
+owner-confirmed free tier.
+[Thinking levels](https://aistudio.google.com/docs/thinking#thinking-levels)
+· [Model pricing](https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite)
+
+NVIDIA GPT-OSS 20B and Nemotron 3 Super each returned HTTP 410 on the hosted
+chat endpoint. The fallback is disabled in the selected profile. NVIDIA
+lists the hosted free Llama 3.2 3B endpoint as deprecated. Gemini 2.5
+Flash-Lite has limited account eligibility. These last two candidates
+received no requests.
+[NVIDIA free endpoint status](https://build.nvidia.com/meta/llama-3.2-3b-instruct/build)
+· [Gemini deprecations](https://aistudio.google.com/docs/deprecations#gemini-2.5-flash-models)
+
+For all five call records, see [recovery evidence](recovery-evidence.json).
+
 ## Integration and follow-up
 
 Hậu can map each constraint to an explicit `semantic` route or a terminal
