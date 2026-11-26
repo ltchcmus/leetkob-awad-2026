@@ -50,6 +50,32 @@ verified access tier. Attach separately verified, redacted billing evidence
 when the account provides it. Publish only reviewed JSON and redacted account
 evidence. Missing per-request billing stays unavailable.
 
+## Recorded real smoke run
+
+On 2026-11-27 ICT, the owner attested free-only access for both keys. The
+existing runner and router dispatched four synthetic inference requests under
+the 30-second deadline and 2,048-token output cap. The local smoke limits
+were applied in the test processes. They are independent of the providers'
+quota and the production environment. The recorded provider fields, local
+correlation IDs, timing, and outcomes are in [the call evidence](smoke-evidence.json).
+
+- Gemini timed out on the baseline. The adapter now requests the documented
+  `LOW` thinking level for `gemini-3.8-flash`. A bounded retest received
+  HTTP 503 before the deadline. The cause of the baseline timeout remains
+  unverified. [Thinking levels](https://aistudio.google.com/docs/thinking#thinking-levels)
+- The NVIDIA independent request timed out. A second NVIDIA request was
+  reached through the fallback path after an injected Gemini 503. It also
+  timed out. The injected 503 consumed no provider request.
+- The router returned `unsure` for every live run. A successful provider
+  payload was unavailable, so schema/evidence acceptance, actual model
+  identifiers and usage still need a successful smoke. The separate offline
+  fallback test validated the expected evidence after a simulated NVIDIA
+  success.
+- USD 0 is the estimate based on the owner-attested tier and provider
+  pricing. Per-request billing evidence is unavailable.
+  [Gemini pricing](https://aistudio.google.com/docs/pricing#gemini-3.8-flash)
+  · [NVIDIA prototype endpoint](https://build.nvidia.com/moonshotai/kimi-k3_1-pro/build)
+
 ## Integration and follow-up
 
 Hậu can map each constraint to an explicit `semantic` route or a terminal

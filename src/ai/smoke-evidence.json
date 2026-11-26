@@ -1,0 +1,148 @@
+{
+  "testedBaseSha": "5c3516f6f4cf9e02827b2dc6ac63b387727df175",
+  "fixture": "synthetic answer() returns 1 instead of 2",
+  "realCallCount": 4,
+  "timeoutMs": 30000,
+  "maxOutputTokens": 2048,
+  "independentRuns": [
+    {
+      "revision": "baseline",
+      "provider": "gemini",
+      "modelRequested": "gemini-3.8-flash",
+      "modelActual": null,
+      "timestamp": "2026-11-26T19:57:37.488Z",
+      "correlationId": "a57b4ef9-5e2b-4aa6-9dff-83425c1b2620",
+      "providerRequestId": null,
+      "providerResponseId": null,
+      "usage": null,
+      "latencyMs": 30010,
+      "httpStatus": null,
+      "calls": 1,
+      "status": "fail",
+      "result": {
+        "constraintId": "returns-two",
+        "verdict": "unsure",
+        "evidence": [],
+        "source": "guardrail",
+        "reason": "timeout"
+      },
+      "evidenceValidation": "not_passed",
+      "expectedEvidence": false,
+      "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.8-flash",
+      "accessTier": "owner_attested_free",
+      "estimatedCost": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "actualBillingEvidence": null
+    },
+    {
+      "revision": "baseline",
+      "provider": "nvidia",
+      "modelRequested": "moonshotai/kimi-k3.1-pro",
+      "modelActual": null,
+      "timestamp": "2026-11-26T19:58:07.499Z",
+      "correlationId": "7787eef4-c7bd-4132-9e0b-406e896c0047",
+      "providerRequestId": null,
+      "providerResponseId": null,
+      "usage": null,
+      "latencyMs": 30011,
+      "httpStatus": null,
+      "calls": 1,
+      "status": "fail",
+      "result": {
+        "constraintId": "returns-two",
+        "verdict": "unsure",
+        "evidence": [],
+        "source": "guardrail",
+        "reason": "timeout"
+      },
+      "evidenceValidation": "not_passed",
+      "expectedEvidence": false,
+      "pricingSource": "https://docs.api.nvidia.com/nim/docs/api-quickstart",
+      "accessTier": "owner_attested_free",
+      "estimatedCost": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "actualBillingEvidence": null
+    },
+    {
+      "revision": "Gemini LOW",
+      "provider": "gemini",
+      "modelRequested": "gemini-3.8-flash",
+      "modelActual": null,
+      "timestamp": "2026-11-26T19:59:03.350Z",
+      "correlationId": "b1b6a1e2-0d47-4101-bc0c-35aca1bfbf13",
+      "providerRequestId": null,
+      "providerResponseId": null,
+      "usage": null,
+      "latencyMs": 19426,
+      "httpStatus": 503,
+      "calls": 1,
+      "status": "fail",
+      "result": {
+        "constraintId": "returns-two",
+        "verdict": "unsure",
+        "evidence": [],
+        "source": "guardrail",
+        "reason": "unavailable"
+      },
+      "evidenceValidation": "not_passed",
+      "expectedEvidence": false,
+      "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.8-flash",
+      "accessTier": "owner_attested_free",
+      "estimatedCost": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "actualBillingEvidence": null
+    }
+  ],
+  "fallbackRun": {
+    "scenario": "injected Gemini 503 then live NVIDIA",
+    "timestamp": "2026-11-26T19:59:49.659Z",
+    "realCallCount": 1,
+    "attempts": [
+      {
+        "correlationId": "5cd1e27e-c07d-49ae-86fb-ec501098e33f",
+        "attempt": 1,
+        "provider": "gemini",
+        "model": "gemini-3.8-flash",
+        "httpStatus": 503,
+        "latencyMs": 19,
+        "outcome": "unavailable",
+        "pricing": "verified_free",
+        "cost": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "origin": "injected_503"
+      },
+      {
+        "correlationId": "5cd1e27e-c07d-49ae-86fb-ec501098e33f",
+        "attempt": 2,
+        "provider": "nvidia",
+        "model": "moonshotai/kimi-k3.1-pro",
+        "latencyMs": 29982,
+        "outcome": "timeout",
+        "pricing": "verified_free",
+        "cost": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "origin": "real_inference"
+      }
+    ],
+    "result": {
+      "constraintId": "returns-two",
+      "verdict": "unsure",
+      "evidence": [],
+      "source": "guardrail",
+      "reason": "timeout"
+    },
+    "evidenceValidation": "not_passed",
+    "expectedEvidence": false,
+    "actualBillingEvidence": null
+  }
+}

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { loadModelRouter } from "../src/ai/config.ts";
 import { runProviderSmoke } from "../src/ai/smoke.ts";
+import type { CallLog } from "../src/ai/types.ts";
 
 const env = {
   MODEL_OFF: "0",
@@ -84,4 +86,56 @@ test("manual smoke blocks unverified access and never falls back on provider fai
   assert.equal(failed.httpStatus, 503);
   assert.equal(failed.result?.verdict, "unsure");
   assert.equal(calls, 1);
+});
+
+test("configured Gemini 503 routes once through the NVIDIA adapter", async () => {
+  const hosts: string[] = [];
+  const logs: CallLog[] = [];
+  const router = loadModelRouter(
+    {
+      ...env,
+      LLM_PRIMARY: "gemini",
+      LLM_FALLBACK: "nvidia",
+      LLM_MAX_ATTEMPTS: "2",
+      LLM_LAB_MAX_CALLS: "2",
+    },
+    {
+      async fetch(url) {
+        const host = new URL(String(url)).hostname;
+        hosts.push(host);
+        if (host === "generativelanguage.googleapis.com")
+          return new Response(null, { status: 503 });
+        return Response.json({
+          choices: [{ finish_reason: "stop", message: { content: valid } }],
+        });
+      },
+      write(entry) {
+        logs.push(entry);
+      },
+    },
+  );
+  const [result] = await router.evaluate({
+    labId: "synthetic-smoke",
+    statement: "Implement answer() so it returns the integer 2.",
+    source: "int answer() {\n  return 1;\n}\n",
+    constraints: [{ id: "returns-two", text: "answer() must return 2." }],
+  });
+  assert.equal(result?.verdict, "violation");
+  assert.deepEqual(result?.evidence, [{ line: 2, text: "  return 1;" }]);
+  assert.deepEqual(hosts, [
+    "generativelanguage.googleapis.com",
+    "integrate.api.nvidia.com",
+  ]);
+  assert.deepEqual(
+    logs.map(({ provider, attempt, httpStatus }) => [
+      provider,
+      attempt,
+      httpStatus,
+    ]),
+    [
+      ["gemini", 1, 503],
+      ["nvidia", 2, 200],
+    ],
+  );
+  assert.equal(logs[0]?.correlationId, logs[1]?.correlationId);
 });

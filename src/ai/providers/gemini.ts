@@ -21,6 +21,9 @@ export function gemini(
           generationConfig: {
             maxOutputTokens: request.maxOutputTokens,
             responseMimeType: "application/json",
+            ...(model === "gemini-3.8-flash" && {
+              thinkingConfig: { thinkingLevel: "LOW" },
+            }),
           },
         },
         signal,

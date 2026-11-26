@@ -610,3 +610,26 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - Treating public model documentation or a configured credential as proof of
   free-only account access. Both live attempts stayed blocked before
   dispatch. No real request, provider usage or billing evidence was recorded.
+
+## 2026-11-27 — Exercise both hosted model adapters
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, and npm.
+
+**Changed**
+
+- Recorded four real synthetic inference requests under the owner-confirmed
+  free tier. Gemini returned one timeout and one HTTP 503. NVIDIA timed out
+  both independently and after an injected Gemini 503.
+- Set the documented low thinking level for Gemini 3.8 Flash, and tested the
+  configured fallback with injected HTTP responses. The router's deadlines,
+  output validation and evidence checks were preserved.
+- Local lint, format check, typecheck and all 57 tests passed, including 31
+  offline model tests.
+
+**Rejected**
+
+- Treating fallback dispatch or a guarded `unsure` as a successful model
+  verdict. Retained the failures and unavailable usage and billing fields in
+  the evidence.

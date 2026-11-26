@@ -259,6 +259,9 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
     const body = JSON.parse(String(init?.body));
     if (String(url).includes("generativelanguage")) {
       assert.ok(body.contents[0].parts[0].text);
+      assert.deepEqual(body.generationConfig.thinkingConfig, {
+        thinkingLevel: "LOW",
+      });
       assert.equal(
         new Headers(init?.headers).get("x-goog-api-key"),
         "synthetic",
@@ -292,7 +295,7 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
     );
   };
   const providers: ModelProvider[] = [
-    gemini("g-model", "synthetic", limits, fakeFetch),
+    gemini("gemini-3.8-flash", "synthetic", limits, fakeFetch),
     nvidia("n-model", "synthetic", limits, fakeFetch),
   ];
   for (const [i, provider] of providers.entries()) {
