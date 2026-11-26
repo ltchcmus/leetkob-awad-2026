@@ -48,6 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(docker info --format '{{.OSType}}')" = linux
+          test "$(docker info --format '{{.CgroupVersion}}')" = 2
           image=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{index .RepoDigests 0}}')
           [[ "$image" =~ ^leetkob-judge@sha256:[0-9a-f]{64}$ ]]
           tagged_id=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{.Id}}')

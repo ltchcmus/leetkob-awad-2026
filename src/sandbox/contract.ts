@@ -112,6 +112,7 @@ export type SandboxResult =
         | "controller_error"
         | "cleanup_failed";
       retryable: boolean;
+      dockerStatus?: number;
       cleanup: CleanupReport;
     }>;
 

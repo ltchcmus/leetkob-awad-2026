@@ -375,6 +375,7 @@ async function phase(
       } catch (error) {
         if (!(error instanceof DockerError)) throw error;
         // A short-lived program can exit between inspect and stats.
+        await sleep(30);
         state = (await engine.call<Inspect>("GET", `/containers/${id}/json`))
           .State;
         if (!state.Running) break;
@@ -406,7 +407,9 @@ async function phase(
     if (state.Error) throw new SandboxFailure("container_start_failed");
     if (name === "compile" && state.ExitCode === 125)
       throw new SandboxFailure("compiler_unavailable");
-    if (state.OOMKilled) reason = "memory";
+    const oomKilled =
+      state.OOMKilled || (name === "compile" && state.ExitCode === 124);
+    if (oomKilled) reason = "memory";
     reason ??=
       state.ExitCode === 0
         ? "ok"
@@ -448,7 +451,7 @@ async function phase(
         cpuTimeMs,
         wallTimeMs,
         memoryPeakBytes,
-        oomKilled: state.OOMKilled,
+        oomKilled,
       },
       artifact: encoded,
     };
@@ -577,7 +580,10 @@ export const runInSandbox: RunInSandbox = async (
         : error instanceof DockerError
           ? "daemon_unavailable"
           : "controller_error";
-    result = failure(code, empty);
+    result =
+      error instanceof DockerError
+        ? { ...failure(code, empty), dockerStatus: error.status }
+        : failure(code, empty);
   }
   const report = await cleanup(engine, context.runId);
   if (!report.succeeded) return failure("cleanup_failed", report);
