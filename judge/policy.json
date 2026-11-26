@@ -1,0 +1,20 @@
+{
+  "version": "sandbox-v1",
+  "compilerProfile": "cpp17-o2",
+  "cpuQuota": 1,
+  "compile": {
+    "cpuTimeMs": 5000,
+    "wallTimeMs": 10000,
+    "memoryBytes": 536870912,
+    "pids": 32,
+    "outputBytes": 8192
+  },
+  "run": {
+    "cpuTimeMs": 1000,
+    "wallTimeMs": 5000,
+    "memoryBytes": 67108864,
+    "pids": 16,
+    "outputBytes": 4096
+  },
+  "workBytes": 33554432
+}

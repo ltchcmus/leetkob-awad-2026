@@ -1,0 +1,79 @@
+name: Sandbox
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, feat/cong-p03-sandbox]
+    tags: [pa3]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sandbox-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sandbox:
+    name: sandbox
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version-file: .node-version
+          cache: npm
+      # Verified upstream v4; dedicated daemon gives this job its own image store.
+      - uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4
+        with:
+          version: v29.6.1
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build the isolated judge (only judge directory is build context)
+        run: docker build --provenance=false --tag leetkob-judge:sandbox-v1 --file Dockerfile.judge judge
+      - name: Resolve immutable image and Linux daemon
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(docker info --format '{{.OSType}}')" = linux
+          test "$(docker info --format '{{.CgroupVersion}}')" = 2
+          image=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{index .RepoDigests 0}}')
+          [[ "$image" =~ ^leetkob-judge@sha256:[0-9a-f]{64}$ ]]
+          tagged_id=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{.Id}}')
+          resolved_id=$(docker image inspect "$image" --format '{{.Id}}')
+          [[ "$resolved_id" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$tagged_id" = "$resolved_id"
+          printf 'SANDBOX_JUDGE_IMAGE=%s\n' "$image" >> "$GITHUB_ENV"
+          printf 'SANDBOX_RUN_ATTACKS=1\n' >> "$GITHUB_ENV"
+          printf 'Tested checkout: %s\n' "$(git rev-parse HEAD)"
+          printf 'Locally built manifest used by runner: %s\n' "$image"
+          printf 'Docker image ID: %s\n' "$resolved_id"
+          sha256sum judge/policy.json
+      - name: Real M1-M9, controls, admission, cancellation and orphan cleanup
+        run: node --test --test-concurrency=1 --test-reporter=spec test/sandbox/*.test.ts
+      - name: Verify no leftover sandbox containers
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ids=$(docker ps -aq --filter label=leetkob.sandbox.run)
+          if [ -n "$ids" ]; then
+            while IFS= read -r id; do
+              [[ "$id" =~ ^[0-9a-f]{12,64}$ ]]
+              docker rm --force "$id"
+            done <<< "$ids"
+            exit 1
+          fi
+          printf 'Remaining labeled sandbox containers: 0\n'
