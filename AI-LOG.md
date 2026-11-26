@@ -563,3 +563,29 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - A fresh clone at `0824360` was checked out at the annotated `pa2` tag. The candidate ZIP included `.git/`, code, tests, Markdown evidence and release metadata without `node_modules/` or local databases.
 - After extracting the candidate ZIP, `git fsck --full` passed; `npm ci`, lint, format check, typecheck and all 26 tests passed. Git status was clean. The final ZIP was extracted again and its Git objects, tag, commit and metadata verified.
 - This entry records the completed verification of **candidate SHA `0824360`**. If documentation is committed after that SHA, the final release SHA and its new Gitleaks/CI/ZIP evidence are recorded separately in the new archive's `.git/pa2-release-verification.json`.
+
+## 2026-11-27 — Build semantic checker guards
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, and npm.
+
+**Changed**
+
+- Wrote offline tests first and recorded the missing-module failure in commit
+  `6aeef25`. Implemented Gemini and NVIDIA adapters, a fake provider, bounded
+  routing, quota and lab budgets, prompt sanitization, and evidence validation.
+- Added a checker boundary that accepts explicit semantic routing and keeps
+  hard-rule results, with allowlisted provider call metadata.
+
+**Rejected**
+
+- Routing every hard-rule `unsure` to the model. The checker needs an explicit
+  semantic classification.
+- Calling live providers before confirming account access, limits, pricing,
+  and data terms. Provider telemetry in the tests is synthetic.
+
+**Validation**
+
+- Node 24.11.0. Dependency install, lint, format check and typecheck passed.
+- 28 offline model tests and all 54 repository tests passed.

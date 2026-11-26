@@ -6,18 +6,48 @@ import { orchestrate } from "../src/checker/orchestrator.ts";
 import { loadModelRouter } from "../src/ai/config.ts";
 import { gemini } from "../src/ai/providers/gemini.ts";
 import { nvidia } from "../src/ai/providers/nvidia.ts";
-import type { CallLog, ModelProvider, ProviderResult } from "../src/ai/types.ts";
+import type {
+  CallLog,
+  ModelProvider,
+  ProviderResult,
+} from "../src/ai/types.ts";
 
-const limits = { requestsPerMinute: 100, tokensPerMinute: 1_000_000, concurrency: 2 };
+const limits = {
+  requestsPerMinute: 100,
+  tokensPerMinute: 1_000_000,
+  concurrency: 2,
+};
 const input = {
-  labId: "internal-lab", statement: "Return a value", source: "// private comments\nint f(){return 1;}\n",
+  labId: "internal-lab",
+  statement: "Return a value",
+  source: "// private comments\nint f(){return 1;}\n",
   constraints: [{ id: "c1", text: "Returns a constant", deductionTenths: 30 }],
 };
-const result = (value: unknown): ProviderResult => ({ kind: "success", text: JSON.stringify(value) });
-const valid = [{ constraintId: "c1", verdict: "violation", evidence: [{ line: 2, text: "int f(){return 1;}" }] }];
+const result = (value: unknown): ProviderResult => ({
+  kind: "success",
+  text: JSON.stringify(value),
+});
+const valid = [
+  {
+    constraintId: "c1",
+    verdict: "violation",
+    evidence: [{ line: 2, text: "int f(){return 1;}" }],
+  },
+];
 const ok = result(valid);
-const opts = { off: false, timeoutMs: 250, maxAttempts: 2, maxOutputTokens: 512, maxLabCalls: 10, maxLabTokens: 100_000 };
-function run(primary: ProviderResult | ((signal: AbortSignal) => Promise<ProviderResult>), fallback = ok, options = opts) {
+const opts = {
+  off: false,
+  timeoutMs: 250,
+  maxAttempts: 2,
+  maxOutputTokens: 512,
+  maxLabCalls: 10,
+  maxLabTokens: 100_000,
+};
+function run(
+  primary: ProviderResult | ((signal: AbortSignal) => Promise<ProviderResult>),
+  fallback = ok,
+  options = opts,
+) {
   const a = new FakeProvider("fake-primary", limits, [primary]);
   const b = new FakeProvider("fake-fallback", limits, [fallback]);
   const logs: CallLog[] = [];
@@ -25,13 +55,25 @@ function run(primary: ProviderResult | ((signal: AbortSignal) => Promise<Provide
   return { a, b, logs, router };
 }
 for (const [name, payload] of [
-  ["invalid JSON", "{"], ["prose", "Here is the answer: []"], ["code fence", "```json\n[]\n```"],
-  ["missing ID", "[]"], ["duplicate ID", JSON.stringify([...valid, ...valid])],
+  ["invalid JSON", "{"],
+  ["prose", "Here is the answer: []"],
+  ["code fence", "```json\n[]\n```"],
+  ["missing ID", "[]"],
+  ["duplicate ID", JSON.stringify([...valid, ...valid])],
   ["unknown ID", JSON.stringify([{ ...valid[0], constraintId: "other" }])],
   ["invalid verdict", JSON.stringify([{ ...valid[0], verdict: "maybe" }])],
-  ["out-of-range line", JSON.stringify([{ ...valid[0], evidence: [{ line: 99, text: "x" }] }])],
-  ["wrong evidence text", JSON.stringify([{ ...valid[0], evidence: [{ line: 2, text: "x" }] }])],
-  ["attempted deduction", JSON.stringify([{ ...valid[0], deductionTenths: 100 }])],
+  [
+    "out-of-range line",
+    JSON.stringify([{ ...valid[0], evidence: [{ line: 99, text: "x" }] }]),
+  ],
+  [
+    "wrong evidence text",
+    JSON.stringify([{ ...valid[0], evidence: [{ line: 2, text: "x" }] }]),
+  ],
+  [
+    "attempted deduction",
+    JSON.stringify([{ ...valid[0], deductionTenths: 100 }]),
+  ],
 ] as const) {
   test(name + " fails closed with no fallback", async () => {
     const { router, b } = run({ kind: "success", text: payload });
@@ -63,18 +105,42 @@ test("safety refusal never routes to fallback", async () => {
   assert.equal(b.calls.length, 0);
 });
 
+test("outage Retry-After keeps the primary out of the next evaluation", async () => {
+  const { router, a, b } = run({
+    kind: "failure",
+    reason: "unavailable",
+    retryAfterMs: 60_000,
+  });
+  b.steps.push(ok);
+  assert.equal((await router.evaluate(input))[0]?.verdict, "violation");
+  assert.equal((await router.evaluate(input))[0]?.verdict, "violation");
+  assert.equal(a.calls.length, 1);
+  assert.equal(b.calls.length, 2);
+});
+
 test("timeout aborts provider and never triggers fallback", async () => {
   let seen: AbortSignal | undefined;
-  const { router, b } = run((signal) => { seen = signal; return new Promise(() => {}); }, ok, { ...opts, timeoutMs: 20 });
+  const { router, b } = run(
+    (signal) => {
+      seen = signal;
+      return new Promise(() => {});
+    },
+    ok,
+    { ...opts, timeoutMs: 20 },
+  );
   assert.equal((await router.evaluate(input))[0]?.reason, "timeout");
   assert.equal(seen?.aborted, true);
   assert.equal(b.calls.length, 0);
 });
 test("one deadline covers primary and fallback", async () => {
-  const { router, a, b } = run(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 30));
-    return { kind: "failure", reason: "unavailable" };
-  }, ok, { ...opts, timeoutMs: 90 });
+  const { router, a, b } = run(
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return { kind: "failure", reason: "unavailable" };
+    },
+    ok,
+    { ...opts, timeoutMs: 90 },
+  );
   b.steps[0] = () => new Promise(() => {});
   assert.equal((await router.evaluate(input))[0]?.reason, "timeout");
   assert.equal(a.calls[0]?.signal, b.calls[0]?.signal);
@@ -95,17 +161,42 @@ test("budget, quota and MODEL_OFF deny dispatch", async () => {
   assert.equal((await router.evaluate(input))[0]?.verdict, "violation");
   assert.equal((await router.evaluate(input))[0]?.reason, "budget");
   assert.equal(a.calls.length, 1);
-  const limited = new FakeProvider("fake", { ...limits, tokensPerMinute: 1 }, [ok]);
-  assert.equal((await new ModelRouter([limited], opts).evaluate(input))[0]?.reason, "quota");
+  const limited = new FakeProvider("fake", { ...limits, tokensPerMinute: 1 }, [
+    ok,
+  ]);
+  assert.equal(
+    (await new ModelRouter([limited], opts).evaluate(input))[0]?.reason,
+    "quota",
+  );
   assert.equal(limited.calls.length, 0);
   let created = false;
-  const off = loadModelRouter({ MODEL_OFF: "1" }, { fetch: () => { created = true; throw Error("unexpected network"); } });
+  const off = loadModelRouter(
+    { MODEL_OFF: "1" },
+    {
+      fetch: () => {
+        created = true;
+        throw Error("unexpected network");
+      },
+    },
+  );
   assert.equal((await off.evaluate(input))[0]?.reason, "model_off");
   assert.equal(created, false);
 });
 test("unverified config and paid toggle provide no dispatch", async () => {
-  for (const paid of ["false","true"]) {
-    const router = loadModelRouter({ MODEL_OFF: "0", LLM_PRIMARY: "gemini", LLM_ALLOW_PAID: paid, LLM_LAB_BUDGET_USD: "0" }, { fetch: () => { throw Error("unexpected network"); } });
+  for (const paid of ["false", "true"]) {
+    const router = loadModelRouter(
+      {
+        MODEL_OFF: "0",
+        LLM_PRIMARY: "gemini",
+        LLM_ALLOW_PAID: paid,
+        LLM_LAB_BUDGET_USD: "0",
+      },
+      {
+        fetch: () => {
+          throw Error("unexpected network");
+        },
+      },
+    );
     assert.equal((await router.evaluate(input))[0]?.verdict, "unsure");
   }
 });
@@ -120,21 +211,46 @@ test("hard-rule pass and hard-rule unsure are final", async () => {
   const unknown = await orchestrate(input, router, []);
   assert.equal(unknown[0]?.verdict, "unsure");
   assert.equal(a.calls.length, 0);
-  const decided = await orchestrate(input, router, [{ kind: "hard-rule", constraintId: "c1", verdict: "pass", evidence: [] }]);
+  const decided = await orchestrate(input, router, [
+    { kind: "hard-rule", constraintId: "c1", verdict: "pass", evidence: [] },
+  ]);
   assert.equal(decided[0]?.verdict, "pass");
   assert.equal(a.calls.length, 0);
 });
 test("prompt excludes identity, comments, deduction and internal lab IDs; logs allowlist metadata", async () => {
   const { router, a, logs } = run(ok);
-  await router.evaluate({ ...input, source: input.source + 'const char* x = "Student Name";\n', identities: ["Student Name"] });
+  await router.evaluate({
+    ...input,
+    source: input.source + 'const char* x = "Student Name";\n',
+    identities: ["Student Name"],
+  });
   const prompt = JSON.stringify(a.calls[0]?.request);
-  for (const forbidden of ["private comments", "Student Name", "deductionTenths", "internal-lab"]) assert.ok(!prompt.includes(forbidden));
+  for (const forbidden of [
+    "private comments",
+    "Student Name",
+    "deductionTenths",
+    "internal-lab",
+  ])
+    assert.ok(!prompt.includes(forbidden));
   const log = JSON.stringify(logs);
-  for (const forbidden of ["int f()", "Returns a constant", "internal-lab", "providerRequestId"]) assert.ok(!log.includes(forbidden));
+  for (const forbidden of [
+    "int f()",
+    "Returns a constant",
+    "internal-lab",
+    "providerRequestId",
+  ])
+    assert.ok(!log.includes(forbidden));
 });
 test("known credentials embedded in model input block dispatch", async () => {
-  const { router, a } = run(ok, ok, { ...opts, sensitiveValues: ["synthetic-do-not-send"] } as typeof opts);
-  assert.equal((await router.evaluate({ ...input, statement: "synthetic-do-not-send" }))[0]?.reason, "unsafe_input");
+  const { router, a } = run(ok, ok, {
+    ...opts,
+    sensitiveValues: ["synthetic-do-not-send"],
+  } as typeof opts);
+  assert.equal(
+    (await router.evaluate({ ...input, statement: "synthetic-do-not-send" }))[0]
+      ?.reason,
+    "unsafe_input",
+  );
   assert.equal(a.calls.length, 0);
 });
 test("Gemini and NVIDIA adapters use text-only provider envelopes and actual metadata", async () => {
@@ -143,19 +259,132 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
     const body = JSON.parse(String(init?.body));
     if (String(url).includes("generativelanguage")) {
       assert.ok(body.contents[0].parts[0].text);
-      assert.equal(new Headers(init?.headers).get("x-goog-api-key"), "synthetic");
-      return Response.json({ responseId: "g-real-id", usageMetadata: { promptTokenCount: 3 }, candidates: [{ finishReason: "STOP", content: { parts: [{ text: "[]" }] } }] });
+      assert.equal(
+        new Headers(init?.headers).get("x-goog-api-key"),
+        "synthetic",
+      );
+      return Response.json(
+        {
+          responseId: "g-response-id",
+          usageMetadata: { promptTokenCount: 3 },
+          candidates: [
+            { finishReason: "STOP", content: { parts: [{ text: "[]" }] } },
+          ],
+        },
+        { headers: { "x-request-id": "g-real-id" } },
+      );
     }
-    assert.equal(String(url), "https://integrate.api.nvidia.com/v1/chat/completions");
+    assert.equal(
+      String(url),
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+    );
     assert.equal(body.stream, false);
     assert.equal(typeof body.messages[0].content, "string");
-    return Response.json({ id: "n-real-id", usage: { prompt_tokens: 3 }, choices: [{ finish_reason: "stop", message: { content: "[]" } }] });
+    return Response.json(
+      {
+        id: "n-response-id",
+        usage: { prompt_tokens: 3 },
+        choices: [{ finish_reason: "stop", message: { content: "[]" } }],
+      },
+      { headers: { "x-request-id": "n-real-id" } },
+    );
   };
-  const providers: ModelProvider[] = [gemini("g-model", "synthetic", limits, fakeFetch), nvidia("n-model", "synthetic", limits, fakeFetch)];
+  const providers: ModelProvider[] = [
+    gemini("g-model", "synthetic", limits, fakeFetch),
+    nvidia("n-model", "synthetic", limits, fakeFetch),
+  ];
   for (const [i, provider] of providers.entries()) {
-    const value = await provider.generate({ prompt: "{}", maxOutputTokens: 20 }, new AbortController().signal);
+    const value = await provider.generate(
+      { prompt: "{}", maxOutputTokens: 20 },
+      new AbortController().signal,
+    );
     assert.equal(value.kind, "success");
     assert.equal(value.providerRequestId, i === 0 ? "g-real-id" : "n-real-id");
+    assert.equal(
+      value.providerResponseId,
+      i === 0 ? "g-response-id" : "n-response-id",
+    );
     assert.equal(value.usage?.inputTokens, 3);
   }
+});
+
+test("HTTP adapters classify rate limit, outage and connection failure", async () => {
+  const signal = new AbortController().signal;
+  const request = { prompt: "{}", maxOutputTokens: 20 };
+  const throttled = gemini(
+    "model",
+    "synthetic",
+    limits,
+    async () =>
+      new Response(null, {
+        status: 429,
+        headers: { "retry-after": "3", "x-request-id": "rate-limit-id" },
+      }),
+  );
+  assert.deepEqual(await throttled.generate(request, signal), {
+    kind: "failure",
+    reason: "rate_limit",
+    retryAfterMs: 3000,
+    providerRequestId: "rate-limit-id",
+  });
+  const unavailable = nvidia(
+    "model",
+    "synthetic",
+    limits,
+    async () => new Response(null, { status: 503 }),
+  );
+  assert.deepEqual(await unavailable.generate(request, signal), {
+    kind: "failure",
+    reason: "unavailable",
+  });
+  const unreachable = gemini("model", "synthetic", limits, async () => {
+    throw new TypeError("synthetic fetch failure");
+  });
+  assert.deepEqual(await unreachable.generate(request, signal), {
+    kind: "failure",
+    reason: "connection",
+  });
+});
+
+test("logged provider IDs exclude configured credentials", async () => {
+  const key = "synthetic-credential";
+  const { router, logs } = run(
+    { ...ok, providerRequestId: key, providerResponseId: `response-${key}` },
+    ok,
+    { ...opts, sensitiveValues: [key] } as typeof opts,
+  );
+  await router.evaluate(input);
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0]?.providerRequestId, undefined);
+  assert.equal(logs[0]?.providerResponseId, undefined);
+  assert.ok(!JSON.stringify(logs).includes(key));
+});
+
+test("only explicitly semantic constraints reach the provider", async () => {
+  const { router, a } = run(ok);
+  const results = await orchestrate(
+    {
+      ...input,
+      constraints: [...input.constraints, { id: "c2", text: "local only" }],
+    },
+    router,
+    [
+      { kind: "semantic", constraintId: "c1" },
+      {
+        kind: "hard-rule",
+        constraintId: "c2",
+        verdict: "unsure",
+        evidence: [],
+      },
+    ],
+  );
+  assert.deepEqual(
+    results.map(({ source, verdict }) => [source, verdict]),
+    [
+      ["model", "violation"],
+      ["hard-rule", "unsure"],
+    ],
+  );
+  assert.equal(a.calls.length, 1);
+  assert.ok(!a.calls[0]?.request.prompt.includes("local only"));
 });
