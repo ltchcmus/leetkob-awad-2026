@@ -612,3 +612,21 @@ configure security CI and prepare the worker integration boundary.
   [integration guide](docs/sandbox/worker-integration.md).
 - Hosted CI/tag evidence and production VPS verification remain pending.
 - No push, merge, tag, GitHub settings change, production deployment or model spending.
+
+## 2026-11-27 — Review sandbox CI and worker handoff
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** Codex, Git, PowerShell, GitHub REST API and Gitleaks.
+
+**Changed:** Scoped CI concurrency by ref so a queued release-tag run is insulated
+from branch and PR runs. Added a digest lookup check against the fresh build and
+logged the actual checkout SHA, built manifest reference, Docker image ID,
+reference policy hash and zero remaining sandbox containers on successful cleanup.
+Documented the worker adapter mapping and the retry/cleanup mismatch found in the
+current queue branch.
+
+**Rejected:** Treating prior Docker Desktop results or checks from teammate PRs as
+hosted sandbox results. The previous local evidence remains tied to its original
+source hashes. Publishing the branch and opening the PR are pending GitHub
+authentication.

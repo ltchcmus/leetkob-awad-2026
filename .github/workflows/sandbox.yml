@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sandbox-ci
+  group: sandbox-ci-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -50,9 +50,16 @@ jobs:
           test "$(docker info --format '{{.OSType}}')" = linux
           image=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{index .RepoDigests 0}}')
           [[ "$image" =~ ^leetkob-judge@sha256:[0-9a-f]{64}$ ]]
+          tagged_id=$(docker image inspect leetkob-judge:sandbox-v1 --format '{{.Id}}')
+          resolved_id=$(docker image inspect "$image" --format '{{.Id}}')
+          [[ "$resolved_id" =~ ^sha256:[0-9a-f]{64}$ ]]
+          test "$tagged_id" = "$resolved_id"
           printf 'SANDBOX_JUDGE_IMAGE=%s\n' "$image" >> "$GITHUB_ENV"
           printf 'SANDBOX_RUN_ATTACKS=1\n' >> "$GITHUB_ENV"
-          printf 'Judge image: %s\n' "$image"
+          printf 'Tested checkout: %s\n' "$(git rev-parse HEAD)"
+          printf 'Locally built manifest used by runner: %s\n' "$image"
+          printf 'Docker image ID: %s\n' "$resolved_id"
+          sha256sum judge/policy.json
       - name: Real M1-M9, controls, admission, cancellation and orphan cleanup
         run: node --test --test-concurrency=1 --test-reporter=spec test/sandbox/*.test.ts
       - name: Verify no leftover sandbox containers
@@ -68,3 +75,4 @@ jobs:
             done <<< "$ids"
             exit 1
           fi
+          printf 'Remaining labeled sandbox containers: 0\n'

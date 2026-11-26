@@ -113,6 +113,9 @@ Scope recovery to known owned UUID labels; never prune unrelated containers/imag
 ## Evidence and remaining integration decisions
 
 Local test-first commit: `ca5690b3e695abeb50bd9096bc654dda7890dd99` (13 RED before runner).
+The sandbox runtime contract and implementation for G7 are in
+`c40b7f30e1b5f49db217125dcf9f50ef560cf6a4`. The PR URL will be recorded once
+GitHub accepts the branch and PR.
 The original attack fixtures/assertions are unchanged. The current real suite covers
 all M1-M9 plus AC/WA/CE; additional tests cover ordered aggregation, pristine state,
 RE, compiler limits, cancellation and crash cleanup. Fake-daemon tests cover admission,
@@ -121,11 +124,31 @@ missing image, failed create and cleanup uncertainty without networking to a pro
 The separate [sandbox workflow](../../.github/workflows/sandbox.yml) runs on PRs to
 main, configured branch pushes and the pa3 tag. It builds the same image definition,
 resolves a digest, runs PA2 checks and all sandbox tests sequentially, without model
-secrets. It fails if labeled containers remain. The workflow is configured locally;
-an actual hosted run URL requires an authorized push. No such run is claimed here.
+secrets. It verifies that the tag and digest resolve to the same locally built
+image and records the checkout SHA, manifest reference, Docker image ID and reference
+policy hash. The judge image is built on the CI runner. Its digest reference does
+not establish that an image was published to a registry. The suite enforces its
+test profiles through the trusted policy input, including per-case limit overrides.
+The job fails if labeled containers remain. Hosted verification is pending.
 
 Thịnh review requested: source/test version mapping, transaction/idempotency behavior,
 attempt UUID/lease ownership, cancellation/rescheduling and persistence adapter.
+
+At G2 revision `aace1b135fc7acd1f2df2655d7b5841eb91b3183`, the worker expects
+`PipelineAdapters.runInSandbox(claim, signal)`. The G7 adapter should hash the claim's
+source, assign stable test IDs from the snapshot order, and apply the operator's
+policy. Confirm how claim limits map to operator caps before forwarding any limits.
+Map a completed sandbox result to the worker's `kind: "judged"`, final status and
+ordered per-test statuses. A compile failure has no test results. An AC must include
+an AC for every test in the immutable snapshot.
+
+The G2 infrastructure outcome carries only a code and the worker currently routes
+those failures to retry. G7 must preserve the sandbox's retryability and cleanup
+decision before wiring this adapter. In particular, uncertain cleanup must prevent
+automatic rescheduling. Handle a worker timeout as cancellation and wait for cleanup
+or reconcile the attempt before scheduling another run. This needs Thịnh's review
+because it affects the worker's failure protocol.
+
 Hậu review requested only where API snapshot IDs/admission or status representation
 meet this boundary. No API/queue implementation has been changed by this module.
 VPS probes, host capacity and CI run for the release tag remain outstanding.
