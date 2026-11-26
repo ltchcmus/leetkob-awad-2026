@@ -72,65 +72,80 @@ export async function connectDocker(): Promise<Engine> {
       ? endpoint.slice(8).replaceAll("/", "\\")
       : undefined;
   if (!socketPath) throw new DockerError(0); // Remote TCP/SSH daemons need a separately reviewed transport.
+  function send<T>(method: string, path: string, body?: unknown): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const payload =
+        body === undefined ? undefined : Buffer.from(JSON.stringify(body));
+      const req = request(
+        {
+          socketPath,
+          agent: false,
+          method,
+          path: `/v1.45${path}`,
+          headers: payload
+            ? {
+                "Content-Type": "application/json",
+                "Content-Length": payload.length,
+              }
+            : {},
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          let size = 0;
+          res.on("data", (chunk: Buffer) => {
+            size += chunk.length;
+            if (size > 1024 * 1024) req.destroy(new DockerError(0));
+            else chunks.push(chunk);
+          });
+          res.on("end", () => {
+            clearTimeout(timer);
+            if (
+              !res.statusCode ||
+              res.statusCode < 200 ||
+              res.statusCode >= 300
+            )
+              reject(new DockerError(res.statusCode ?? 0));
+            else {
+              try {
+                resolve(
+                  (size
+                    ? JSON.parse(Buffer.concat(chunks).toString("utf8"))
+                    : {}) as T,
+                );
+              } catch {
+                reject(new DockerError(0));
+              }
+            }
+          });
+          res.on("error", () => {
+            clearTimeout(timer);
+            reject(new DockerError(0));
+          });
+        },
+      );
+      const timer = setTimeout(() => req.destroy(new DockerError(0)), 3000);
+      req.on("error", () => {
+        clearTimeout(timer);
+        reject(new DockerError(0));
+      });
+      req.end(payload);
+    });
+  }
   return {
     endpoint,
-    call<T>(method: string, path: string, body?: unknown): Promise<T> {
-      return new Promise((resolve, reject) => {
-        const payload =
-          body === undefined ? undefined : Buffer.from(JSON.stringify(body));
-        const req = request(
-          {
-            socketPath,
-            method,
-            path: `/v1.45${path}`,
-            headers: payload
-              ? {
-                  "Content-Type": "application/json",
-                  "Content-Length": payload.length,
-                }
-              : {},
-          },
-          (res) => {
-            const chunks: Buffer[] = [];
-            let size = 0;
-            res.on("data", (chunk: Buffer) => {
-              size += chunk.length;
-              if (size > 1024 * 1024) req.destroy(new DockerError(0));
-              else chunks.push(chunk);
-            });
-            res.on("end", () => {
-              clearTimeout(timer);
-              if (
-                !res.statusCode ||
-                res.statusCode < 200 ||
-                res.statusCode >= 300
-              )
-                reject(new DockerError(res.statusCode ?? 0));
-              else {
-                try {
-                  resolve(
-                    (size
-                      ? JSON.parse(Buffer.concat(chunks).toString("utf8"))
-                      : {}) as T,
-                  );
-                } catch {
-                  reject(new DockerError(0));
-                }
-              }
-            });
-            res.on("error", () => {
-              clearTimeout(timer);
-              reject(new DockerError(0));
-            });
-          },
-        );
-        const timer = setTimeout(() => req.destroy(new DockerError(0)), 3000);
-        req.on("error", () => {
-          clearTimeout(timer);
-          reject(new DockerError(0));
-        });
-        req.end(payload);
-      });
+    async call<T>(method: string, path: string, body?: unknown): Promise<T> {
+      try {
+        return await send<T>(method, path, body);
+      } catch (error) {
+        if (
+          method !== "GET" ||
+          !(error instanceof DockerError) ||
+          error.status !== 0
+        )
+          throw error;
+        // Retry a disconnected read once on a fresh socket, never a mutation.
+        return send<T>(method, path, body);
+      }
     },
   };
 }
