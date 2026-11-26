@@ -86,7 +86,11 @@ test(
         request.tests[2]!,
       ],
     });
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "WA");
       assert.deepEqual(
@@ -110,7 +114,11 @@ test(
         2,
       ),
     );
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "AC");
       assert.equal(value.tests.length, 2);
@@ -130,7 +138,11 @@ test(
   { timeout: 60_000 },
   async () => {
     const value = await call(snapshot("int main(){return 3;}"));
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "RE");
       assert.equal(value.tests[0]?.result.reason, "exit_code");
@@ -161,7 +173,11 @@ test(
       snapshot("#include <iostream>\nint main(){std::cout<<5;}"),
       (p) => ({ ...p, compile: { ...p.compile, wallTimeMs: 100 } }),
     );
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "TLE");
       assert.equal(value.compile.reason, "wall_clock");
@@ -177,7 +193,11 @@ test(
       ...p,
       compile: { ...p.compile, outputBytes: 64 },
     }));
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "CE");
       assert.equal(value.compile.reason, "output_limit");
@@ -211,7 +231,11 @@ test(
         compile: { ...p.compile, cpuTimeMs: 100 },
       }),
     );
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "TLE");
       assert.equal(value.compile.reason, "cpu_time");
@@ -231,7 +255,11 @@ test(
         compile: { ...p.compile, memoryBytes: 16 * 1024 * 1024 },
       }),
     );
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "MLE");
       assert.equal(value.compile.reason, "memory");
@@ -252,7 +280,11 @@ test(
       ...p,
       run: { ...p.run, cpuTimeMs: 10_000, wallTimeMs: 500 },
     }));
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "TLE");
       assert.equal(value.tests[0]?.result.reason, "wall_clock");
@@ -283,7 +315,11 @@ test(
       ...p,
       run: { ...p.run, memoryBytes: 256 * 1024 * 1024 },
     }));
-    assert.equal(value?.kind, "completed");
+    assert.equal(
+      value?.kind,
+      "completed",
+      value?.kind === "infrastructure_error" ? value.code : undefined,
+    );
     if (value?.kind === "completed") {
       assert.equal(value.judgeStatus, "AC");
       assert.equal(

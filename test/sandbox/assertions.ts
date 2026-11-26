@@ -30,7 +30,9 @@ export function assertResult(
   assert.equal(
     value.kind,
     "completed",
-    "infrastructure errors are RED, never a student verdict",
+    value.kind === "infrastructure_error"
+      ? `infrastructure errors are RED, never a student verdict: ${value.code} (cleanup succeeded: ${value.cleanup.succeeded})`
+      : "infrastructure errors are RED, never a student verdict",
   );
   if (value.kind !== "completed") throw new Error("Expected completed result");
   assert.equal(value.submissionId, request.submissionId);

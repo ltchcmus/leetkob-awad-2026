@@ -370,7 +370,16 @@ async function phase(
       state = (await engine.call<Inspect>("GET", `/containers/${id}/json`))
         .State;
       if (!state.Running) break;
-      await sample();
+      try {
+        await sample();
+      } catch (error) {
+        if (!(error instanceof DockerError)) throw error;
+        // A short-lived program can exit between inspect and stats.
+        state = (await engine.call<Inspect>("GET", `/containers/${id}/json`))
+          .State;
+        if (!state.Running) break;
+        throw error;
+      }
       if (cpuTimeMs >= limits.cpuTimeMs) {
         reason ??= "cpu_time";
         kill();
