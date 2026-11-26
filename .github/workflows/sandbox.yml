@@ -36,7 +36,7 @@ jobs:
           set-host: true
           daemon-config: |
             {"features":{"containerd-snapshotter":true}}
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn, execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { win32 } from "node:path";
 import { promisify } from "node:util";
 import type {
   SandboxPolicy,
@@ -98,7 +99,11 @@ export function runBoundedNode(
       failure ??= new Error(message);
       if (process.platform === "win32" && child.pid !== undefined) {
         execFile(
-          "taskkill.exe",
+          win32.join(
+            process.env.SystemRoot ?? "C:\\Windows",
+            "System32",
+            "taskkill.exe",
+          ),
           ["/PID", String(child.pid), "/T", "/F"],
           {
             timeout: 3000,

@@ -1,8 +1,20 @@
 import { execFile } from "node:child_process";
 import { request } from "node:http";
+import { win32 } from "node:path";
 import { promisify } from "node:util";
 
 const exec = promisify(execFile);
+export const dockerExecutable =
+  process.platform === "win32"
+    ? win32.join(
+        process.env.ProgramFiles ?? "C:\\Program Files",
+        "Docker",
+        "Docker",
+        "resources",
+        "bin",
+        "docker.exe",
+      )
+    : "/usr/bin/docker";
 export class DockerError extends Error {
   status: number;
   constructor(status: number) {
@@ -43,7 +55,7 @@ export async function connectDocker(): Promise<Engine> {
   let endpoint = process.env.DOCKER_HOST;
   if (!endpoint) {
     const { stdout } = await exec(
-      "docker",
+      dockerExecutable,
       ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
       {
         timeout: 3000,

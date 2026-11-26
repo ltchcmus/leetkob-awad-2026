@@ -2,7 +2,12 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
-import { connectDocker, dockerEnvironment, DockerError } from "./docker.ts";
+import {
+  connectDocker,
+  dockerEnvironment,
+  dockerExecutable,
+  DockerError,
+} from "./docker.ts";
 import type { Engine } from "./docker.ts";
 import { SandboxFailure, validateInputs } from "./validation.ts";
 import type {
@@ -232,7 +237,7 @@ async function phase(
   watchdog.unref();
   let removed = false;
   const child = spawn(
-    "docker",
+    dockerExecutable,
     ["--host", engine.endpoint, "start", "--attach", "--interactive", id],
     {
       env: dockerEnvironment(),

@@ -630,3 +630,10 @@ current queue branch.
 hosted sandbox results. The previous local evidence remains tied to its original
 source hashes. Publishing the branch and opening the PR are pending GitHub
 authentication.
+
+**Hosted review follow-up:** The four Quality jobs passed on the initial PR head.
+SonarCloud flagged dependency lifecycle execution and two executable lookups.
+The Sandbox workflow now installs dependencies with `--ignore-scripts`.
+The trusted controller invokes Docker using its system installation path, and
+the Windows test watchdog uses the System32 path for `taskkill.exe`.
+The sandbox fixtures and assertions are unchanged.
