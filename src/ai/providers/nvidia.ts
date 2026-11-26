@@ -31,6 +31,7 @@ export function nvidia(
           const message = object(choice.message);
           const measured = object(data.usage);
           const meta = {
+            ...(typeof data.model === "string" && { modelActual: data.model }),
             ...(typeof data.id === "string" && { providerResponseId: data.id }),
             usage: usage(
               measured.prompt_tokens,

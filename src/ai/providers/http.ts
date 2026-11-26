@@ -48,7 +48,10 @@ export async function post(
     };
   }
   const id = response.headers.get("x-request-id");
-  const metadata = id ? { providerRequestId: id } : {};
+  const metadata = {
+    httpStatus: response.status,
+    ...(id && { providerRequestId: id }),
+  };
   if (!response.ok || response.status !== 200) {
     void response.body?.cancel().catch(() => undefined);
     const reason =

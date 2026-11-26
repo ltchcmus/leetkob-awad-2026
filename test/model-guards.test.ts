@@ -266,6 +266,7 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
       return Response.json(
         {
           responseId: "g-response-id",
+          modelVersion: "g-actual-version",
           usageMetadata: { promptTokenCount: 3 },
           candidates: [
             { finishReason: "STOP", content: { parts: [{ text: "[]" }] } },
@@ -283,6 +284,7 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
     return Response.json(
       {
         id: "n-response-id",
+        model: "n-actual-model",
         usage: { prompt_tokens: 3 },
         choices: [{ finish_reason: "stop", message: { content: "[]" } }],
       },
@@ -305,6 +307,11 @@ test("Gemini and NVIDIA adapters use text-only provider envelopes and actual met
       i === 0 ? "g-response-id" : "n-response-id",
     );
     assert.equal(value.usage?.inputTokens, 3);
+    assert.equal(value.httpStatus, 200);
+    assert.equal(
+      value.modelActual,
+      i === 0 ? "g-actual-version" : "n-actual-model",
+    );
   }
 });
 
@@ -324,6 +331,7 @@ test("HTTP adapters classify rate limit, outage and connection failure", async (
   assert.deepEqual(await throttled.generate(request, signal), {
     kind: "failure",
     reason: "rate_limit",
+    httpStatus: 429,
     retryAfterMs: 3000,
     providerRequestId: "rate-limit-id",
   });
@@ -336,6 +344,7 @@ test("HTTP adapters classify rate limit, outage and connection failure", async (
   assert.deepEqual(await unavailable.generate(request, signal), {
     kind: "failure",
     reason: "unavailable",
+    httpStatus: 503,
   });
   const unreachable = gemini("model", "synthetic", limits, async () => {
     throw new TypeError("synthetic fetch failure");

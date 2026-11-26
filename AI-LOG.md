@@ -589,3 +589,24 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 
 - Node 24.11.0. Dependency install, lint, format check and typecheck passed.
 - 28 offline model tests and all 54 repository tests passed.
+
+## 2026-11-27 — Prepare manual provider verification
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, and npm.
+
+**Changed**
+
+- Added a manual smoke runner that isolates one provider and one synthetic
+  request through the existing semantic guards. Added HTTP status and the
+  reported model to the allowlisted call metadata.
+- Ran the metadata assertions before exposing the new fields, then verified
+  both adapters through injected responses. Lint, format check, typecheck,
+  30 model tests and all 56 repository tests passed.
+
+**Rejected**
+
+- Treating public model documentation or a configured credential as proof of
+  free-only account access. Both live attempts stayed blocked before
+  dispatch. No real request, provider usage or billing evidence was recorded.

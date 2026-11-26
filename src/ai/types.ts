@@ -36,6 +36,8 @@ export type Usage = {
   reasoningTokens?: number;
 };
 export type ProviderResult = {
+  httpStatus?: number;
+  modelActual?: string;
   providerRequestId?: string;
   providerResponseId?: string;
   usage?: Usage;
@@ -61,6 +63,8 @@ export type CallLog = {
   attempt: number;
   provider: string;
   model: string;
+  modelActual?: string;
+  httpStatus?: number;
   providerRequestId?: string;
   providerResponseId?: string;
   usage?: Usage;

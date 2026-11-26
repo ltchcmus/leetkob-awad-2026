@@ -16,6 +16,7 @@ export function callLog(
     !/^(?:AIza|nvapi-|gh[pousr]_|sk-)/u.test(value);
   const id = result.providerRequestId;
   const responseId = result.providerResponseId;
+  const { httpStatus, modelActual } = result;
   const tokens = usage(
     result.usage?.inputTokens,
     result.usage?.outputTokens,
@@ -26,6 +27,8 @@ export function callLog(
     attempt,
     provider: safe(provider.id) ? provider.id : "redacted",
     model: safe(provider.model) ? provider.model : "redacted",
+    ...(modelActual && safe(modelActual) && { modelActual }),
+    ...(httpStatus && { httpStatus }),
     ...(id && safe(id) && { providerRequestId: id }),
     ...(responseId && safe(responseId) && { providerResponseId: responseId }),
     ...(Object.keys(tokens).length && { usage: tokens }),

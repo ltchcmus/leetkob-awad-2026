@@ -28,6 +28,9 @@ export function gemini(
           const candidate = first(data.candidates);
           const measured = object(data.usageMetadata);
           const meta = {
+            ...(typeof data.modelVersion === "string" && {
+              modelActual: data.modelVersion,
+            }),
             ...(typeof data.responseId === "string" && {
               providerResponseId: data.responseId,
             }),
