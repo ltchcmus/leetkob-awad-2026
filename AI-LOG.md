@@ -1327,3 +1327,8 @@ container checks prove ten Accepted own cases, killed-worker UUID cleanup and
 five HTTP actors/three sorting submissions with configured deductions and audit.
 The complete frozen-source Sandbox run and hosted PR checks are recorded in the
 follow-up evidence; earlier failed local runs are not reported as passing.
+
+The final frozen local verification completed with 152 normal tests and 54 sandbox
+tests passing, zero skips, and zero sandbox containers left. The history secret
+scan also passed. PR #22 targets `integration/pa3`. Public-deployment and release
+sign-offs are still pending; no team approval or maximum score is invented.

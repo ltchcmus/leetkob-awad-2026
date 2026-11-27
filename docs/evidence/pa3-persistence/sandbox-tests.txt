@@ -1,0 +1,78 @@
+(node:24392) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ stopped worker leaves a durable job; a new process judges through Docker exactly once (2231.7641ms)
+✔ terminal exit waits for delayed Docker OOM attribution (60.1093ms)
+✔ a SIGKILL exit code alone never establishes memory exhaustion (620.9215ms)
+✔ harness: bounded trusted child returns a protocol response (121.0619ms)
+✔ harness: independent watchdog kills a hung trusted child (805.8131ms)
+✔ harness: protocol capture is bounded even when trusted child floods output (99.3035ms)
+✔ harness: provider environment is replaced with public test canaries (0.5814ms)
+✔ oracle M1: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (3.4423ms)
+✔ oracle M2: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.4217ms)
+✔ oracle M3: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.4719ms)
+✔ oracle M4: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.3556ms)
+✔ oracle M5: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (5.0992ms)
+✔ oracle M6: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.545ms)
+✔ oracle M7: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.3123ms)
+✔ oracle M8: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.3308ms)
+✔ oracle M9-runtime: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.3753ms)
+✔ oracle M9-compile: accepts modeled safe evidence and rejects a weak outcome (no C++ execution) (0.3904ms)
+✔ oracle: a claimed timeout with surviving container is rejected (0.4566ms)
+✔ oracle: infrastructure failure cannot masquerade as a successful attack test (0.3169ms)
+✔ all ten own cases compile and are Accepted inside the reviewed sandbox (34430.9014ms)
+(node:27360) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ real worker crash quarantines its container until attempt-UUID reconciliation (4716.7067ms)
+(node:16412) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PRODUCT_JUDGE=AC
+PRODUCT_JUDGE=AC
+PRODUCT_JUDGE=RE
+PRODUCT_JUDGE=WA
+PRODUCT_JUDGE=CE
+PRODUCT_JUDGE=TLE
+PRODUCT_JUDGE=RE
+PRODUCT_JUDGE=MLE
+✔ real API and Docker worker entrypoints persist six judge outcomes (14283.1494ms)
+(node:22404) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ five HTTP actors submit three real sandbox cases and preserve TA-only review and Publish gates (10921.2256ms)
+✔ integration: token comparison and first failing test produce an ordered prefix (1942.0653ms)
+✔ integration: each test receives pristine writable state (2237.2059ms)
+✔ integration: runtime nonzero exit is RE rather than infrastructure failure (1624.0163ms)
+✔ integration: cancellation removes active containers and is not a student verdict (1626.0512ms)
+✔ integration: compiler wall deadline kills its whole container (1752.1512ms)
+✔ integration: compiler diagnostics obey their byte cap (914.9587ms)
+✔ integration: detached watchdog removes a container after trusted worker crash (9803.3841ms)
+✔ integration: compiler CPU budget includes its process tree (2436.6858ms)
+✔ integration: compiler memory exhaustion is MLE with OOM evidence (1254.2775ms)
+✔ negative control: wall-only termination fails the original CPU-budget oracle (3061.0815ms)
+✔ negative control: bounded larger memory permits readback and fails the M4 oracle (1672.7358ms)
+✔ admission: source hash mismatch is rejected before Docker access (1.9356ms)
+✔ admission: student container flags and environment cannot cross the request boundary (0.2118ms)
+✔ admission: mutable image, unlimited resources and duplicate tests are rejected (0.6977ms)
+✔ admission: an already cancelled attempt does not launch Docker (0.3444ms)
+✔ infrastructure: missing image is not a student CE and is not automatically retried (31.7811ms)
+✔ infrastructure: start rejection is retryable only after verified cleanup (17.3455ms)
+✔ infrastructure: cleanup uncertainty overrides any result and prevents retry (21.0101ms)
+✔ sandbox AC: valid.cpp (2655.257ms)
+✔ sandbox WA: valid.cpp (2598.282ms)
+✔ sandbox CE: compile-error.cpp (1595.1657ms)
+✔ sandbox M1: m1-network.cpp (2318.3583ms)
+✔ sandbox M2: m2-cpu.cpp (3798.8169ms)
+✔ sandbox M3: m3-wall.cpp (3388.1166ms)
+✔ sandbox M4: m4-memory.cpp (2393.7513ms)
+✔ sandbox M5: m5-pids.cpp (4809.8112ms)
+✔ sandbox M6: m6-output.cpp (3259.5785ms)
+✔ sandbox M7: m7-user.cpp (2760.6224ms)
+✔ sandbox M8: m8-host.cpp (2267.8199ms)
+✔ sandbox M9-runtime: m9-runtime.cpp (2234.3475ms)
+✔ sandbox M9-compile: m9-compile.cpp (2083.1732ms)
+ℹ tests 54
+ℹ suites 0
+ℹ pass 54
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135036.5434
