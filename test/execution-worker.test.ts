@@ -96,11 +96,11 @@ test("AC persists routed verdicts through SQLite and dispatches only the semanti
   assert.doesNotMatch(model.calls[0]!.request.prompt, /goto|deductionTenths/u);
   const rows = repo.db
     .prepare(
-      "SELECT constraint_id, verdict, source FROM verdicts ORDER BY constraint_id",
+      "SELECT constraint_id, verdict, origin FROM verdicts ORDER BY constraint_id",
     )
     .all();
   assert.deepEqual(
-    rows.map((row) => [row.constraint_id, row.verdict, row.source]),
+    rows.map((row) => [row.constraint_id, row.verdict, row.origin]),
     [
       ["C1", "pass", "hard-rule"],
       ["C2", "pass", "model"],
@@ -149,7 +149,7 @@ test("uncertain cleanup quarantines execution and reclaim opens no new sandbox",
   );
 });
 
-test("safe cleanup is required before rescheduling a canceled sandbox", async (t) => {
+test("clean retryable failure waits for sandbox cleanup after cancellation", async (t) => {
   const { repo, now, enqueue } = workflowFixture(t);
   enqueue();
   const stop = new AbortController();
@@ -163,7 +163,7 @@ test("safe cleanup is required before rescheduling a canceled sandbox", async (t
       settled = true;
       return {
         kind: "infrastructure_error",
-        code: "cancelled",
+        code: "controller_timeout",
         retryable: true,
         cleanup: {
           attempted: true,
@@ -182,4 +182,19 @@ test("safe cleanup is required before rescheduling a canceled sandbox", async (t
     "retry",
   );
   assert.equal(settled, true);
+});
+
+test("clean but nonretryable sandbox cancellation still requires reconciliation", async (t) => {
+  const { repo, now, enqueue } = workflowFixture(t);
+  enqueue();
+  const adapter = createExecutionAdapters(policy, async () => ({
+    kind: "infrastructure_error",
+    code: "cancelled",
+    retryable: false,
+    cleanup: { attempted: true, succeeded: true, remainingContainerIds: [] },
+  }));
+  assert.equal(
+    await processOneJob(repo, adapter, { workerId: "cancel", now: () => now }),
+    "quarantined",
+  );
 });
