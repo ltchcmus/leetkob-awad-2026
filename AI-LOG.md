@@ -1242,3 +1242,8 @@ lab limits. Added semantic guidance about storage aliases and evidence sufficien
 Rejected: bypassing ownership, enabling production model calls before durable
 quota/redaction, editing official labels, or treating offline prompt tests as
 proof of model quality. No new official evaluation is claimed.
+
+Validation: the first six-verdict product run passed. Adding a second AC memory
+positive control exposed a stale total-count assertion in the new test (2 vs 1).
+The count now follows AC submissions; each submission still has its own unique
+verdict-set key. No existing security assertion was changed.

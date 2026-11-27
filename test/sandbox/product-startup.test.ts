@@ -111,7 +111,7 @@ test(
       }
       assert.equal(
         repo.db.prepare("SELECT COUNT(*) n FROM verdict_sets").get()?.n,
-        1,
+        cases.filter(([verdict]) => verdict === "AC").length,
       );
     } finally {
       server.kill();
