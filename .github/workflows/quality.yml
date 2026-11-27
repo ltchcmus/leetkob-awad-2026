@@ -3,9 +3,9 @@ run-name: Quality / ${{ github.ref_name }}
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, integration/pa3]
   push:
-    branches: [main]
+    branches: [main, integration/pa3]
     tags: [pa2]
   workflow_dispatch:
 

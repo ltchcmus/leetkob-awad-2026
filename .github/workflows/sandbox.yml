@@ -2,9 +2,9 @@ name: Sandbox
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, integration/pa3]
   push:
-    branches: [main, feat/cong-p03-sandbox]
+    branches: [main, integration/pa3, feat/cong-p03-sandbox]
     tags: [pa3]
   workflow_dispatch:
 
@@ -41,6 +41,15 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+      - name: Build and run checker without network or secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build -f Dockerfile.checker -t leetkob-checker:ci .
+          mkdir -p /tmp/checker-output
+          chmod 777 /tmp/checker-output
+          timeout 60 docker run --rm --network none --read-only --memory 256m --memory-swap 256m --pids-limit 64 --cap-drop ALL --security-opt no-new-privileges -e MODEL_OFF=1 -v "$PWD/test/eval-cases/own:/dataset:ro" -v "/tmp/checker-output:/output" leetkob-checker:ci --data /dataset --predictions /output/predictions.jsonl
+          test "$(wc -l < /tmp/checker-output/predictions.jsonl)" = 10
       - name: Build the isolated judge (only judge directory is build context)
         run: docker build --provenance=false --tag leetkob-judge:sandbox-v1 --file Dockerfile.judge judge
       - name: Resolve immutable image and Linux daemon

@@ -1,0 +1,6 @@
+FROM node:24.11.0-bookworm-slim
+WORKDIR /app
+COPY --chown=node:node src ./src
+USER node
+ENV MODEL_OFF=1
+ENTRYPOINT ["node", "src/checker/cli.ts"]
