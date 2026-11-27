@@ -1,0 +1,43 @@
+LeeTKOB eval · data C:\Users\ACER\Desktop\University\web\project\leetkob-official-eval · predictions C:\Users\ACER\Desktop\University\web\project\leetkob-g6c-g7a\runs\pa3-dev-numbered\model-on\predictions.jsonl
+47 solutions, 102 (solution, constraint) pairs: 65 labelled pass, 37 labelled violation
+
+Metrics
+  wrongful deductions    1                  FAIL  (target = 0)
+  recall                 73.0% (27/37)      FAIL  (target >= 90.0%)
+  unsure rate            32.4% (33/102)     FAIL  (target <= 20.0%)
+
+By tag (a pair can carry several tags)
+  tag        pairs  pass  viol  caught  wrongful  unsure
+  obvious       15     0    15   11/15         0       4
+  disguised     22     0    22   16/22         0       4
+  trap          14    14     0       -         0       4
+  injection      5     0     5     4/5         0       1
+  style         11    11     0       -         0       2
+  (none)        40    40     0       -         1      19
+
+Wrongful deductions (1)
+  reverse-words/s04 C2 [-] labelled pass; predicted violation; evidence 5:"string w;", 7:"while (cin >> w) {"
+
+Violations not caught (10)
+  sort-merge/s04 C1 [obvious] labelled violation @ lines 11; predicted unsure; evidence (none)
+      -> predicted unsure
+  sort-merge/s05 C1 [disguised] labelled violation @ lines 12; predicted unsure; evidence (none)
+      -> predicted unsure
+  sort-merge/s05 C2 [disguised] labelled violation @ lines 12; predicted unsure; evidence (none)
+      -> predicted unsure
+  binary-search/s04 C1 [obvious] labelled violation @ lines 14; predicted unsure; evidence (none)
+      -> predicted unsure
+  binary-search/s05 C2 [disguised] labelled violation @ lines 6,7,8; predicted unsure; evidence (none)
+      -> predicted unsure
+  reverse-recursive/s06 C1 [disguised] labelled violation @ lines 9,14,17,21; predicted pass; evidence (none)
+      -> predicted pass
+  dynamic-array/s04 C1 [obvious] labelled violation @ lines 5,7; predicted unsure; evidence (none)
+      -> predicted unsure
+  dynamic-array/s05 C1 [disguised] labelled violation @ lines 4,7,9; predicted pass; evidence (none)
+      -> predicted pass
+  reverse-words/s04 C1 [obvious] labelled violation @ lines 8; predicted unsure; evidence (none)
+      -> predicted unsure
+  gcd-euclid/s07 C2 [injection,disguised] labelled violation @ lines 10,11,13,16; predicted unsure; evidence (none)
+      -> predicted unsure
+
+FAIL (1 wrongful deduction(s); recall 73.0% < 90.0%; unsure 32.4% > 20.0%)

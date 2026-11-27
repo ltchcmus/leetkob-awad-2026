@@ -1,0 +1,22 @@
+{
+  "baselineSha": "43fead49b3aaad9ac0b6093c4c8f19496de17189",
+  "diagnosticInferenceCalls": 2,
+  "labelsSentToProvider": false,
+  "samples": [
+    {
+      "solution": "binary-search/s04",
+      "classification": "exact_quote_wrong_line",
+      "reportedLine": 13,
+      "exactMatchingOriginalLine": 14,
+      "text": "        auto it = lower_bound(a.begin(), a.end(), x);"
+    },
+    {
+      "solution": "sort-merge/s04",
+      "classification": "no_evidence_mismatch"
+    }
+  ],
+  "baselineInvalidEvidence": 30,
+  "retrospectiveClassification": "unavailable because baseline logs omit payloads",
+  "fix": "Explicit original line numbers and exact sanitized text with citation eligibility",
+  "validatorChanged": false
+}

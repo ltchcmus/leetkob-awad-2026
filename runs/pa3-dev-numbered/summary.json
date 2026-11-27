@@ -1,0 +1,101 @@
+{
+  "checkerSha": "1c5549f",
+  "baselineSha": "43fead4",
+  "datasetSha": "552c811db2d35a23d641bc4fdffc1ac120be1a28",
+  "calls": 39,
+  "diagnosticCalls": 2,
+  "outcomes": {
+    "success": 34,
+    "unavailable": 2,
+    "timeout": 2,
+    "invalid_evidence": 1
+  },
+  "inputTokens": 34807,
+  "outputTokens": 5231,
+  "unknownUsageCalls": 4,
+  "before": {
+    "pairs": 102,
+    "passLabels": 65,
+    "violationLabels": 37,
+    "wrongful": 0,
+    "caught": 12,
+    "recall": 0.32432432432432434,
+    "unsure": 67,
+    "unsureRate": 0.6568627450980392,
+    "missing": 0,
+    "thresholds": {
+      "maxWrongful": 0,
+      "minRecall": 0.9,
+      "maxUnsure": 0.2
+    },
+    "pass": false,
+    "wrongfulPairs": [],
+    "missedPairs": [
+      "sort-merge/s04 C1",
+      "sort-merge/s04 C2",
+      "sort-merge/s05 C1",
+      "sort-merge/s05 C2",
+      "sort-merge/s06 C2",
+      "sort-merge/s07 C2",
+      "binary-search/s04 C1",
+      "binary-search/s04 C2",
+      "binary-search/s05 C2",
+      "binary-search/s06 C2",
+      "binary-search/s07 C2",
+      "reverse-recursive/s06 C1",
+      "dynamic-array/s04 C1",
+      "dynamic-array/s04 C2",
+      "dynamic-array/s05 C1",
+      "dynamic-array/s05 C2",
+      "dynamic-array/s06 C2",
+      "dynamic-array/s07 C3",
+      "reverse-words/s04 C1",
+      "reverse-words/s05 C2",
+      "reverse-words/s06 C2",
+      "reverse-words/s07 C2",
+      "gcd-euclid/s04 C2",
+      "gcd-euclid/s05 C2",
+      "gcd-euclid/s07 C2"
+    ]
+  },
+  "after": {
+    "pairs": 102,
+    "passLabels": 65,
+    "violationLabels": 37,
+    "wrongful": 1,
+    "caught": 27,
+    "recall": 0.7297297297297297,
+    "unsure": 33,
+    "unsureRate": 0.3235294117647059,
+    "missing": 0,
+    "thresholds": {
+      "maxWrongful": 0,
+      "minRecall": 0.9,
+      "maxUnsure": 0.2
+    },
+    "pass": false,
+    "wrongfulPairs": ["reverse-words/s04 C2"],
+    "missedPairs": [
+      "sort-merge/s04 C1",
+      "sort-merge/s05 C1",
+      "sort-merge/s05 C2",
+      "binary-search/s04 C1",
+      "binary-search/s05 C2",
+      "reverse-recursive/s06 C1",
+      "dynamic-array/s04 C1",
+      "dynamic-array/s05 C1",
+      "reverse-words/s04 C1",
+      "gcd-euclid/s07 C2"
+    ]
+  },
+  "estimated80": {
+    "calls": 66.38297872340425,
+    "inputTokens": 59245.95744680851,
+    "outputTokens": 8903.829787234043,
+    "freeTierUsd": 0,
+    "paidReferenceUsd": 0.028167234042553193
+  },
+  "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
+  "actualBilling": "unavailable",
+  "qualityStatus": "PARTIAL"
+}

@@ -1197,3 +1197,26 @@ The sandbox fixtures and assertions are unchanged.
   the scores. Thirty model calls failed evidence checks and two timed out.
 - Treating Windows CRLF checkout hashes as official byte hashes. Restored
   Git blob bytes and verified all 128 manifest entries.
+
+## 2026-11-27 — Diagnose evidence coordinates and publish the team baseline
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, Gemini API, Node.js 24.11.0, Docker and GitHub Actions.
+
+**Changed**
+
+- Two diagnostic requests reproduced an exact quote paired with the wrong
+  physical line number. Added numbered sanitized source objects and
+  LF/CRLF regression tests while preserving strict evidence checks.
+- Reran 39 official evaluation calls in a separate artifact directory.
+  Invalid evidence fell from 30 to 1, recall rose from 32.43% to 72.97%,
+  and unsure fell from 65.69% to 32.35%. One semantic wrongful deduction
+  appeared on reverse-words/s04 C2.
+
+**Rejected**
+
+- Treating the improved evidence rate as sufficient checker quality.
+  Kept the wrongful verdict, failures and unchanged scorer thresholds.
+  Baseline logs omit payloads, so the exact cause of all 30 prior evidence
+  failures cannot be retrospectively classified.
