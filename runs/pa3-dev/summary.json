@@ -1,0 +1,47 @@
+{
+  "implementationSha": "3c91bed972b740b979e154b97900f6e9a6ab282b",
+  "datasetSha": "552c811db2d35a23d641bc4fdffc1ac120be1a28",
+  "submissions": 47,
+  "semanticSubmissions": 39,
+  "pairs": 102,
+  "realCalls": 39,
+  "inputTokens": 28532,
+  "outputTokens": 4831,
+  "reasoningTokens": "unavailable",
+  "p50LatencyMs": 1232,
+  "p95LatencyMs": 30014,
+  "outcomes": {
+    "invalid_evidence": 30,
+    "success": 7,
+    "timeout": 2
+  },
+  "unknownProviderRequestIds": 39,
+  "timeoutRate": 0.05128205128205128,
+  "modelOffScorerExit": 1,
+  "realScorerExit": 1,
+  "fullCoverage": true,
+  "estimated80": {
+    "calls": 66.38297872340425,
+    "inputTokens": 48565.10638297872,
+    "outputTokens": 8222.978723404256,
+    "freeTierUsd": 0,
+    "paidReferenceUsd": 0.024475744680851064
+  },
+  "pricingSource": "https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite",
+  "pricingCheckedDate": "2026-11-27",
+  "paidInputUsdPerMillion": 0.25,
+  "paidOutputUsdPerMillion": 1.5,
+  "actualBilling": "unavailable",
+  "quota": "Owner-confirmed free-only; provider maximum and remaining quota unmeasured",
+  "localLimits": {
+    "calls": 39,
+    "concurrency": 1,
+    "attempts": 1,
+    "RPM": 10,
+    "TPM": 100000,
+    "labTokens": 300000,
+    "timeoutMs": 30000,
+    "maxOutputTokens": 2048
+  },
+  "lineEndings": "Initial Windows checkout used CRLF; restored exact Git blob bytes and verified all 128 manifest hashes. Checker normalization preserved submitted source content."
+}

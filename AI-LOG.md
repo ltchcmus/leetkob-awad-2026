@@ -1170,3 +1170,30 @@ The sandbox fixtures and assertions are unchanged.
   in the TA queue. Inspection showed that current persistence creates reviews
   for every evaluation. The corrected test requires both verdicts and one
   persisted verdict set across process restarts.
+
+## 2026-11-27 — Evaluate the public dev set
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, Docker and Gemini API.
+
+**Changed**
+
+- Built a non-root checker image and ran the official dataset with network
+  disabled, then ran 39 bounded real Gemini calls through the shared checker.
+- Preserved 102 predictions per run, scorer reports and safe call logs.
+  MODEL_OFF recall was 21.62% with 73.53% unsure. Real-model recall was
+  32.43% with 65.69% unsure. Both had zero wrongful deductions and scorer
+  exit 1.
+- Measured 28,532 input and 4,831 output tokens. Scaling by 80/47 gives
+  48,565 input and 8,223 output tokens. Estimated free-tier cost is USD 0.
+  A paid-price reference is USD 0.02448, excluding unknown timeout usage.
+  The account's remaining quota and actual billing remain unavailable.
+  [Pricing](https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite)
+
+**Rejected**
+
+- Accepting invalid evidence or altering hard rules and labels to improve
+  the scores. Thirty model calls failed evidence checks and two timed out.
+- Treating Windows CRLF checkout hashes as official byte hashes. Restored
+  Git blob bytes and verified all 128 manifest entries.

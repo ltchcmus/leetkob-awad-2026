@@ -1,0 +1,216 @@
+{
+  "hardRulePairs": 55,
+  "decided": 27,
+  "findings": [
+    {
+      "solution": "binary-search/s01",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "binary-search/s04",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "unsure",
+      "expectedEvidence": [14]
+    },
+    {
+      "solution": "binary-search/s05",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "binary-search/s06",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "binary-search/s07",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "dynamic-array/s01",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "dynamic-array/s04",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "unsure",
+      "expectedEvidence": [5, 7]
+    },
+    {
+      "solution": "dynamic-array/s05",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "pass",
+      "expectedEvidence": [4, 7, 9]
+    },
+    {
+      "solution": "dynamic-array/s06",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "dynamic-array/s08",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "gcd-euclid/s01",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "gcd-euclid/s02",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "gcd-euclid/s06",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "gcd-euclid/s07",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-recursive/s01",
+      "constraint": "C2",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-recursive/s03",
+      "constraint": "C2",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-recursive/s04",
+      "constraint": "C2",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-recursive/s05",
+      "constraint": "C2",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-recursive/s06",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "pass",
+      "expectedEvidence": [9, 14, 17, 21]
+    },
+    {
+      "solution": "reverse-words/s01",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-words/s02",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-words/s04",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "unsure",
+      "expectedEvidence": [8]
+    },
+    {
+      "solution": "reverse-words/s06",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "reverse-words/s07",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "sort-merge/s01",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "sort-merge/s03",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "sort-merge/s04",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "unsure",
+      "expectedEvidence": [11]
+    },
+    {
+      "solution": "sort-merge/s05",
+      "constraint": "C1",
+      "expected": "violation",
+      "actual": "unsure",
+      "expectedEvidence": [12]
+    },
+    {
+      "solution": "sort-merge/s07",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    },
+    {
+      "solution": "sort-merge/s09",
+      "constraint": "C1",
+      "expected": "pass",
+      "actual": "unsure",
+      "expectedEvidence": []
+    }
+  ]
+}

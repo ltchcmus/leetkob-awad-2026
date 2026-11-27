@@ -90,3 +90,29 @@ The separate checker Dockerfile, hosted integration result, budget/quota
 approval for a full evaluation, real predictions, scorer report, and
 measured 80-submission estimate are pending. Existing Gemini smoke
 evidence covers the synthetic case.
+
+## Team integration baseline
+
+The local `integration/pa3` branch is created from the verified G9b
+candidate on `feat/cong-g6c-g7a-integration`. It contains G6 history
+`1ce04f1`, G5 `1f93f84` (including G1/G2/G4), and G3 `49a9079`.
+The history preserves the original test-first commits.
+
+Create follow-up branches from the integration baseline after it is
+published by the owner. Target subsequent PRs at `integration/pa3`.
+Quality and Sandbox workflows accept that base and branch. CI evidence
+for this combined candidate remains pending publication.
+
+Hậu should inspect `runs/pa3-dev/hard-rule-findings.json`, address the
+hard-rule algorithm findings, retain API/auth and class ownership
+regressions, and complete the submission documents. The checker and
+execution worker are already implemented.
+
+Thịnh should implement the persistence interfaces described above, retain
+lease fencing and exactly-one verdict persistence, complete metadata and
+identity-redaction context, review/Publish/audit, E2E privacy and cross-class
+checks, five deployment accounts, the Product Owners FAQ, and independent
+rubric audit. Own eval cases remain separate from official ground truth.
+
+This baseline supports continued team development. Public VPS end-to-end
+verification and release-tag CI remain outstanding.

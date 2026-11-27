@@ -270,3 +270,17 @@ The following capabilities are outside the current PA#2 implementation:
 - Deployment, monitoring and performance evaluation
 
 These capabilities are intended for subsequent development milestones.
+
+# Docker checker and evaluation
+
+Build with `docker build -f Dockerfile.checker -t leetkob-checker:g9b .`.
+The image runs Node 24.11.0 as a non-root user. Mount the dataset read-only
+at `/dataset` and a writable output directory at `/output`, then pass
+`--data /dataset --predictions /output/predictions.jsonl`. Use
+`MODEL_OFF=1` and `--network none` for offline evaluation.
+
+The selected real provider is Gemini 3.1 Flash-Lite with minimal thinking,
+a 30-second deadline, and owner-confirmed free-tier access. Per-call usage
+and the cost extrapolation are recorded in the evaluation artifacts.
+[Reproduction and results](runs/pa3-dev/README.md)
+· [Integration handoff](docs/checker-worker-handoff.md)
