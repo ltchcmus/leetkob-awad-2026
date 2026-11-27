@@ -15,6 +15,14 @@ import { verifyFiles } from "./eval-cases/verify-official.ts";
 
 const own = fileURLToPath(new URL("./eval-cases/own/", import.meta.url));
 
+test("five additional PA4 cases retain complete independent labels and tags", () => {
+  const result = validateOwnCases(
+    fileURLToPath(new URL("./eval-cases/pa4-extra/", import.meta.url)),
+  );
+  assert.equal(result.solutions, 5);
+  assert.equal(result.pairs, 10);
+});
+
 test("own evaluation cases have complete labels, evidence, tests, trap and injection tags", () => {
   const result = validateOwnCases(own);
   assert.equal(result.solutions, 5);
