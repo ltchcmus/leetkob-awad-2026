@@ -657,6 +657,7 @@ Perform the final secret scan and ZIP verification previously assigned to Thịn
 - Treating HTTP 200 from a text diagnostic as semantic evidence or selecting
   the NVIDIA alternatives that returned HTTP 410. The selected profile
   leaves fallback disabled.
+
 ## 21 November 2026 — Durable submission storage: contract and regression tests
 
 Owner: Thịnh (23120200), assisted by Codex.
@@ -1066,6 +1067,7 @@ result.
 PA2 authentication/publication regression command passed all 26 tests. Lint,
 typecheck, format check and `git diff --check` exited 0. No commit, push or
 merge was performed.
+
 ## 2026-11-21 — Implement isolated C++ judging and adversarial container tests
 
 **Owner:** Lê Thành Công — 23120222
@@ -1139,3 +1141,32 @@ The Sandbox workflow now installs dependencies with `--ignore-scripts`.
 The trusted controller invokes Docker using its system installation path, and
 the Windows test watchdog uses the System32 path for `taskkill.exe`.
 The sandbox fixtures and assertions are unchanged.
+
+## 2026-11-27 — Connect the checker and execution worker
+
+**Owner** Lê Thành Công (23120222)
+
+**Tool** Codex, PowerShell, Git, Node.js 24.11.0, SQLite and Docker Desktop.
+
+**Changed**
+
+- Integrated the dependency histories on a separate local branch. Added
+  explicit semantic routing and reused the same checker in the CLI and worker.
+- Connected the existing worker to the Docker judge and the existing SQLite
+  lease and persistence API. Added an offline adapter test and a real process
+  restart test using a queued synthetic submission and Docker judge.
+
+**Rejected**
+
+- Treating an unclassified hard-rule result as a model request. Also kept
+  sandbox attempts with unconfirmed cleanup from launching again after lease
+  recovery. The execution adapter keeps production model dispatch disabled
+  until a durable quota ledger is available.
+
+**Validation**
+
+- The new routing and execution tests failed before their entry points existed.
+  The first Docker smoke asserted that only the semantic verdict would appear
+  in the TA queue. Inspection showed that current persistence creates reviews
+  for every evaluation. The corrected test requires both verdicts and one
+  persisted verdict set across process restarts.
