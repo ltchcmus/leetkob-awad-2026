@@ -1247,3 +1247,24 @@ Validation: the first six-verdict product run passed. Adding a second AC memory
 positive control exposed a stale total-count assertion in the new test (2 vs 1).
 The count now follows AC submissions; each submission still has its own unique
 verdict-set key. No existing security assertion was changed.
+
+## 2026-11-27 - Verify local configuration and live model
+
+Tool: Codex, Node.js 24.11.0 and Gemini API.
+
+Changed: brought the main working directory to the integrated branch and restored
+the complete environment template. Preserved the ignored local credentials file.
+
+Validation: two sequential synthetic real Gemini 3.1 Flash-Lite calls passed
+schema and original-source evidence validation under a 30-second deadline,
+one attempt, concurrency one and USD 0 policy. The incorrect return fixture
+returned violation at line 2; the storage-alias fixture returned pass.
+Reported usage totals 638 input and 186 output tokens; latencies 1642 ms and
+984 ms. Provider response IDs were supplied; request IDs and billing evidence
+were unavailable. The free-tier cost estimate is USD 0 based on owner attestation.
+No new official evaluation or production worker model-on result is claimed.
+
+Local root verification: 142 regression tests and 51 Sandbox tests passed.
+An initial product attempt remained retry_wait with daemon_unavailable and no
+student verdict; standalone product verification and full Sandbox rerun passed.
+The infrastructure interruption is retained as a limitation, not a student error.
