@@ -1359,3 +1359,30 @@ deductions, 40.5% recall and 46.1% unsure. This improved from 13 violations,
 49 unsure and 35.1% recall. Full tests passed 149/149; lint, strict typecheck
 and format check passed. No commit, push or merge was performed.
 
+## 2026-11-27 - Document the PA#3 prototype and assessment
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Update the project documentation from the historical PA#2 scope
+to the current PA#3 prototype, write an evidence-based architecture and demo
+guide, and assess each PA#3 rubric criterion without inventing deployment or
+evaluation success.
+
+**Changed:** Added `PA3.md`; updated the README with the PA#3 workflow,
+existing commands, API/privacy boundaries, checker CLI and current evaluator
+result; and placed a PA#3 rubric assessment ahead of the preserved PA#2
+historical assessment. The documents identify local-test evidence separately
+from public-deployment and evaluator evidence.
+
+**Rejected:** Claiming public deployment, release-tag CI, a passing official
+evaluator, production-enabled model dispatch, full rubric completion, or a
+real-model evaluation beyond the evidence already recorded in the repository.
+
+**Validation:** Command names were checked against `package.json`. The current
+official MODEL_OFF result is recorded as 102 pairs, 40 pass, 15 violation, 47
+unsure, 40.5% recall, zero wrongful deductions and evaluator exit 1. Markdown
+formatting and repository quality checks are run with the documentation change;
+their observed result is recorded in the accompanying handoff. No commit, push
+or merge was performed.
