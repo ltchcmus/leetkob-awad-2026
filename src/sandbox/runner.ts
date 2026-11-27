@@ -10,6 +10,7 @@ import {
 } from "./docker.ts";
 import type { Engine } from "./docker.ts";
 import { SandboxFailure, validateInputs } from "./validation.ts";
+import { finalExitState } from "./exit-state.ts";
 import type {
   CleanupReport,
   IsolationEvidence,
@@ -404,6 +405,11 @@ async function phase(
       });
     if (killPromise) await killPromise;
     if (infra) throw new SandboxFailure(infra);
+    state = await finalExitState(
+      state,
+      async () =>
+        (await engine.call<Inspect>("GET", `/containers/${id}/json`)).State,
+    );
     if (state.Error) throw new SandboxFailure("container_start_failed");
     if (name === "compile" && state.ExitCode === 125)
       throw new SandboxFailure("compiler_unavailable");

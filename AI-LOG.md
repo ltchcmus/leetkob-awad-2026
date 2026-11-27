@@ -1220,3 +1220,12 @@ The sandbox fixtures and assertions are unchanged.
   Kept the wrongful verdict, failures and unchanged scorer thresholds.
   Baseline logs omit payloads, so the exact cause of all 30 prior evidence
   failures cannot be retrospectively classified.
+
+**Hosted follow-up**
+
+The initial integration push passed Quality and Docker checker checks.
+Sandbox M4 reported RE instead of MLE. Added bounded reinspection for the
+Docker OOM event after exit 137, with regression tests for delayed OOM
+and a genuine SIGKILL without OOM. The latter stays RE. OOM attribution
+timing is the suspected cause; the initial log contains no raw inspect
+payload to establish it conclusively.
