@@ -10,11 +10,11 @@
     "outputBytes": 8192
   },
   "run": {
-    "cpuTimeMs": 1000,
-    "wallTimeMs": 5000,
-    "memoryBytes": 67108864,
+    "cpuTimeMs": 5000,
+    "wallTimeMs": 15000,
+    "memoryBytes": 536870912,
     "pids": 16,
-    "outputBytes": 4096
+    "outputBytes": 1048576
   },
   "workBytes": 33554432
 }

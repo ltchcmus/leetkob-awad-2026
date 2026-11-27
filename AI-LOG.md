@@ -1229,3 +1229,21 @@ Docker OOM event after exit 137, with regression tests for delayed OOM
 and a genuine SIGKILL without OOM. The latter stays RE. OOM attribution
 timing is the suspected cause; the initial log contains no raw inspect
 payload to establish it conclusively.
+
+## 2026-11-27 - Verify product startup and policy
+
+Tool: Codex, Node, Git and Docker.
+
+Changed: a real-entrypoint regression reproduced HTTP 404 before the repository
+wiring repair. Added a trusted auth adapter boundary and real HTTP/Docker worker
+smoke tests. Aligned default policy ceilings and output validation to validated
+lab limits. Added semantic guidance about storage aliases and evidence sufficiency.
+
+Rejected: bypassing ownership, enabling production model calls before durable
+quota/redaction, editing official labels, or treating offline prompt tests as
+proof of model quality. No new official evaluation is claimed.
+
+Validation: the first six-verdict product run passed. Adding a second AC memory
+positive control exposed a stale total-count assertion in the new test (2 vs 1).
+The count now follows AC submissions; each submission still has its own unique
+verdict-set key. No existing security assertion was changed.

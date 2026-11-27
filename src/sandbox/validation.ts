@@ -43,7 +43,7 @@ function limits(value: PhaseLimits) {
     integer(value.wallTimeMs, 100, 60_000) &&
     integer(value.memoryBytes, 16 * 1024 * 1024, 1024 * 1024 * 1024) &&
     integer(value.pids, 4, 128) &&
-    integer(value.outputBytes, 64, 65536)
+    integer(value.outputBytes, 64, 1048576)
   );
 }
 export function validateInputs(
