@@ -1,6 +1,8 @@
 import { unsure } from "../ai/router.ts";
 import type { ModelRouter } from "../ai/router.ts";
 import type { ConstraintResult, SemanticInput } from "../ai/types.ts";
+import { routeHardRules } from "./hard-rules.ts";
+import type { CheckerInput } from "./hard-rules.ts";
 
 /** Explicit routing boundary for the future G5 adapter. Hard-rule unsure remains final. */
 type Routing =
@@ -9,6 +11,27 @@ type Routing =
       ConstraintResult,
       "constraintId" | "evidence" | "verdict"
     >);
+
+export async function checkSubmission(
+  input: CheckerInput & { labId: string; identities?: readonly string[] },
+  router: Pick<ModelRouter, "evaluate">,
+  signal?: AbortSignal,
+): Promise<{ solution: string; evaluations: ConstraintResult[] }> {
+  const { labId, source, statement, identities, solution } = input;
+  const evaluations = await orchestrate(
+    {
+      labId,
+      source,
+      statement,
+      ...(identities && { identities }),
+      constraints: input.constraints.map(({ id, text }) => ({ id, text })),
+    },
+    router,
+    routeHardRules(input),
+    signal,
+  );
+  return { solution, evaluations };
+}
 
 export async function orchestrate(
   input: SemanticInput,

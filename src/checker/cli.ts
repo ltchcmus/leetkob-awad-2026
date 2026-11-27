@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { evaluateHardRules } from "./hard-rules.ts";
+import { loadModelRouter } from "../ai/config.ts";
+import { checkSubmission } from "./orchestrator.ts";
 import type { CheckerConstraint, CheckerInput } from "./hard-rules.ts";
 
 type CliOptions = { data: string; predictions: string };
@@ -12,12 +13,6 @@ type PredictionRow = {
   evidence: Array<{ line: number; text: string }>;
 };
 
-/*
- * PROPOSED dataset adapter: a dataset directory contains statement.md,
- * constraints.json, and C++ sources below solutions/. The official evaluator
- * layout and error vocabulary remain pending; keeping this adapter separate
- * prevents the checker core from depending on filesystem conventions.
- */
 function parseOptions(arguments_: string[]): CliOptions {
   if (arguments_.length !== 4) {
     throw new Error(
@@ -47,7 +42,7 @@ function parseOptions(arguments_: string[]): CliOptions {
   return { data, predictions };
 }
 
-function readConstraints(path: string): CheckerConstraint[] {
+function readConstraints(path: string, official: boolean): CheckerConstraint[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
@@ -67,11 +62,19 @@ function readConstraints(path: string): CheckerConstraint[] {
       item === null ||
       typeof item !== "object" ||
       typeof item.id !== "string" ||
-      typeof item.text !== "string" ||
-      typeof item.deductionTenths !== "number" ||
-      !Number.isInteger(item.deductionTenths)
+      typeof item.text !== "string"
     ) {
       throw new Error(`Invalid proposed constraint at index ${index}`);
+    }
+    const deduction = official ? item.deduction : item.deductionTenths;
+    const deductionTenths =
+      typeof deduction === "number"
+        ? official
+          ? deduction * 10
+          : deduction
+        : NaN;
+    if (!Number.isSafeInteger(deductionTenths)) {
+      throw new Error(`Invalid deduction at index ${index}`);
     }
     if (ids.has(item.id)) {
       throw new Error(`Duplicate constraint id: ${item.id}`);
@@ -80,7 +83,7 @@ function readConstraints(path: string): CheckerConstraint[] {
     return {
       id: item.id,
       text: item.text,
-      deductionTenths: item.deductionTenths,
+      deductionTenths,
     };
   });
 }
@@ -104,16 +107,44 @@ function solutionId(solutionsDirectory: string, file: string): string {
     .replace(/\.cpp$/, "");
 }
 
-export function readProposedDataset(directory: string): CheckerInput[] {
-  const statement = readFileSync(join(directory, "statement.md"), "utf8");
-  const constraints = readConstraints(join(directory, "constraints.json"));
-  const solutionsDirectory = join(directory, "solutions");
-  const inputs = cppFiles(solutionsDirectory).map((file) => ({
-    solution: solutionId(solutionsDirectory, file),
+type DatasetInput = CheckerInput & { labId: string };
+
+function readProblem(
+  problemDirectory: string,
+  solutionsDirectory: string,
+  labId: string,
+  official: boolean,
+): DatasetInput[] {
+  const statement = readFileSync(
+    join(problemDirectory, "statement.md"),
+    "utf8",
+  );
+  const constraints = readConstraints(
+    join(problemDirectory, "constraints.json"),
+    official,
+  );
+  return cppFiles(solutionsDirectory).map((file) => ({
+    labId,
+    solution:
+      (official ? labId + "/" : "") + solutionId(solutionsDirectory, file),
     statement,
     source: readFileSync(file, "utf8"),
     constraints,
   }));
+}
+
+export function readDataset(directory: string): DatasetInput[] {
+  const problems = join(directory, "problems");
+  const solutions = join(directory, "solutions");
+  const inputs = existsSync(problems)
+    ? readdirSync(problems, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort()
+        .flatMap((id) =>
+          readProblem(join(problems, id), join(solutions, id), id, true),
+        )
+    : readProblem(directory, solutions, "dataset", false);
   const solutionIds = new Set<string>();
   for (const input of inputs) {
     if (solutionIds.has(input.solution)) {
@@ -124,25 +155,23 @@ export function readProposedDataset(directory: string): CheckerInput[] {
   return inputs;
 }
 
-export function evaluateModelOff(inputs: CheckerInput[]): PredictionRow[] {
-  return inputs.flatMap((input) =>
-    evaluateHardRules(input).evaluations.map((evaluation) => ({
-      solution: input.solution,
-      constraint: evaluation.constraintId,
-      verdict: evaluation.verdict,
-      evidence: evaluation.evidence,
-    })),
-  );
-}
-
-export function runCli(arguments_: string[]): void {
+export async function runCli(arguments_: string[]): Promise<void> {
   const options = parseOptions(arguments_);
-  if (process.env.MODEL_OFF !== "1") {
-    throw new Error(
-      "MODEL_OFF=1 is required until the model adapter is integrated",
+  const router = loadModelRouter(process.env, {
+    write: (entry) => process.stderr.write(JSON.stringify(entry) + "\n"),
+  });
+  const rows: PredictionRow[] = [];
+  for (const input of readDataset(options.data)) {
+    const checked = await checkSubmission(input, router);
+    rows.push(
+      ...checked.evaluations.map((evaluation) => ({
+        solution: input.solution,
+        constraint: evaluation.constraintId,
+        verdict: evaluation.verdict,
+        evidence: evaluation.evidence,
+      })),
     );
   }
-  const rows = evaluateModelOff(readProposedDataset(options.data));
   writeFileSync(
     options.predictions,
     rows.map((row) => JSON.stringify(row)).join("\n") +
@@ -150,10 +179,12 @@ export function runCli(arguments_: string[]): void {
   );
 }
 
-try {
-  runCli(process.argv.slice(2));
-} catch (error) {
-  const message = error instanceof Error ? error.message : "unknown error";
-  process.stderr.write(`checker: ${message}\n`);
-  process.exitCode = 2;
+if (import.meta.main) {
+  try {
+    await runCli(process.argv.slice(2));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    process.stderr.write(`checker: ${message}\n`);
+    process.exitCode = 2;
+  }
 }
