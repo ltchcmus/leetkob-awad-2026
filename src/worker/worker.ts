@@ -1,4 +1,5 @@
 import type { WorkflowRepository } from "../db/workflow-repository.ts";
+import { createHash } from "node:crypto";
 import { WorkflowError } from "../queue/types.ts";
 import type {
   Claim,
@@ -80,6 +81,18 @@ function startHeartbeat(context: JobContext, leaseMs: number): () => void {
 async function ensureJudgeResult(context: JobContext): Promise<JudgeResult> {
   const { repo, claim, now, adapters, controller, timeoutMs } = context;
   if (claim.judgeResult !== null) return claim.judgeResult;
+  if (adapters.awaitsSandboxCleanup) {
+    repo.startSandboxAttempt(claim, now());
+    repo.recordAttemptMetadata(
+      claim,
+      {
+        policyVersion: adapters.policyVersion ?? "unspecified",
+        sourceHash: createHash("sha256").update(claim.source).digest("hex"),
+        snapshotVersion: claim.snapshotVersion ?? 1,
+      },
+      now(),
+    );
+  }
   const action = (signal: AbortSignal) => adapters.runInSandbox(claim, signal);
   const timer = adapters.awaitsSandboxCleanup
     ? setTimeout(
@@ -94,12 +107,27 @@ async function ensureJudgeResult(context: JobContext): Promise<JudgeResult> {
   ).finally(() => clearTimeout(timer));
   if (result.kind === "infrastructure_error") {
     if (adapters.awaitsSandboxCleanup) {
+      // A timed-out/disconnected mutation can finish after the cleanup list read.
+      const cleanupConfirmed =
+        result.cleanupSucceeded === true &&
+        ![
+          "daemon_unavailable",
+          "controller_error",
+          "controller_timeout",
+        ].includes(result.code);
+      repo.recordAttemptCleanup(
+        claim,
+        cleanupConfirmed,
+        result.retryable === true,
+        result.code.replace(/[^a-z0-9_]/g, "_").slice(0, 80) || "unknown",
+        now(),
+      );
       const code = /^[a-z0-9_]{1,80}$/u.test(result.code)
         ? result.code
         : "sandbox_protocol_error";
       throw new WorkerFailure(
         code,
-        result.retryable !== true || result.cleanupSucceeded !== true,
+        result.retryable !== true || !cleanupConfirmed,
       );
     }
     const known = new Set([
@@ -115,6 +143,8 @@ async function ensureJudgeResult(context: JobContext): Promise<JudgeResult> {
   }
   if (result.kind !== "judged")
     throw new WorkerFailure("sandbox_protocol_error");
+  if (adapters.awaitsSandboxCleanup)
+    repo.recordAttemptCleanup(claim, true, true, "completed", now());
   repo.recordJudgeResult(claim, result, now());
   return result;
 }
@@ -148,7 +178,13 @@ function persistCheckerResult(
 async function checkAccepted(context: JobContext): Promise<void> {
   const { claim, adapters, controller, timeoutMs } = context;
   const input = {
-    ...(adapters.awaitsSandboxCleanup && { labId: claim.labId }),
+    ...(adapters.awaitsSandboxCleanup && {
+      identities: context.repo.getRedactionContext(claim),
+    }),
+    ...(adapters.awaitsSandboxCleanup && {
+      labId: claim.labId,
+      attemptId: claim.attemptId,
+    }),
     solution: claim.submissionId,
     statement: claim.statement,
     source: claim.source,
@@ -242,6 +278,17 @@ export async function processOneJob(
       !leaseLost(error) &&
       (!(error instanceof WorkerFailure) || error.quarantined)
     ) {
+      try {
+        repo.recordAttemptCleanup(
+          claim,
+          false,
+          false,
+          "sandbox_cleanup_unconfirmed",
+          now(),
+        );
+      } catch {
+        /* Expired leases are reconciled by UUID during recovery. */
+      }
       options.onEvent?.({
         event: "job.quarantined",
         jobId: claim.jobId,

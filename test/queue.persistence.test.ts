@@ -111,7 +111,7 @@ test("migration upgrades an existing PA2 file without changing its rows or recei
   const reopened = new WorkflowRepository(path);
   assert.equal(
     reopened.db.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get()?.n,
-    1,
+    2,
   );
   reopened.close();
   t.after(() => rmSync(directory, { recursive: true, force: true }));

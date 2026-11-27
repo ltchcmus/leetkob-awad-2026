@@ -17,10 +17,15 @@ export function createExecutionAdapters(
   const cleanRetries = new Map<string, number>();
   return {
     awaitsSandboxCleanup: true,
+    policyVersion: trustedPolicy.version,
     async runInSandbox(claim, signal) {
       const priorCleanup = cleanRetries.get(claim.jobId);
       cleanRetries.delete(claim.jobId);
-      if (claim.attemptNumber > 1 && priorCleanup !== claim.attemptNumber) {
+      if (
+        claim.attemptNumber > 1 &&
+        !claim.previousCleanupConfirmed &&
+        priorCleanup !== claim.attemptNumber
+      ) {
         return {
           kind: "infrastructure_error",
           code: "attempt_cleanup_unconfirmed",

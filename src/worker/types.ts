@@ -6,6 +6,8 @@ import type {
 } from "../queue/types.ts";
 
 export type CheckerInput = {
+  attemptId?: string;
+  identities?: readonly string[];
   labId?: number;
   solution: string;
   statement: string;
@@ -27,6 +29,7 @@ type ExecutionOutcome =
 // These are trusted server adapters. Neither interface permits writes to marks.
 export interface PipelineAdapters {
   readonly awaitsSandboxCleanup?: true;
+  readonly policyVersion?: string;
   runInSandbox(job: Claim, signal: AbortSignal): Promise<ExecutionOutcome>;
   checkSubmission(
     input: CheckerInput,

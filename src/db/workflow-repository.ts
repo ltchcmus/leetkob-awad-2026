@@ -1,3 +1,4 @@
+import { AttemptPersistence } from "./attempt-persistence.ts";
 import { createHash, randomUUID } from "node:crypto";
 import type { SQLInputValue } from "node:sqlite";
 import { PublicationRepository } from "../repository.ts";
@@ -355,7 +356,105 @@ export class WorkflowRepository extends PublicationRepository {
     });
   }
 
+  startSandboxAttempt(claim: Claim, now: number): void {
+    new AttemptPersistence(this.db).start(claim, now);
+  }
+  recordAttemptCleanup(
+    claim: Claim,
+    confirmed: boolean,
+    retryable: boolean,
+    code: string,
+    now: number,
+  ): void {
+    new AttemptPersistence(this.db).cleanup(
+      claim,
+      confirmed,
+      retryable,
+      code,
+      now,
+    );
+  }
+  listQuarantinedAttempts() {
+    return new AttemptPersistence(this.db).list();
+  }
+  reconcileAttemptCleanup(
+    attemptId: string,
+    input: { confirmed: boolean; operator: string; now: number },
+  ): void {
+    new AttemptPersistence(this.db).reconcile(attemptId, input);
+  }
+  recordAttemptMetadata(
+    claim: Claim,
+    input: {
+      policyVersion: string;
+      sourceHash: string;
+      snapshotVersion: number;
+    },
+    now: number,
+  ): void {
+    new AttemptPersistence(this.db).metadata(claim, input, now);
+  }
+  setTrustedIdentities(
+    actor: Principal,
+    userId: string,
+    values: readonly string[],
+  ): void {
+    this.role(actor, "admin");
+    if (
+      values.length > 31 ||
+      values.some((v) => typeof v !== "string" || !v.length || v.length > 200)
+    )
+      throw new WorkflowError("invalid-input");
+    this.write(() => {
+      this.db
+        .prepare("DELETE FROM trusted_identity_values WHERE user_id=?")
+        .run(userId);
+      for (const value of new Set(values))
+        this.db
+          .prepare("INSERT INTO trusted_identity_values VALUES (?,?)")
+          .run(userId, value);
+    });
+  }
+  getRedactionContext(claim: Claim): string[] {
+    const row = this.one<{ student_id: string }>(
+      "SELECT student_id FROM submissions WHERE id=?",
+      claim.submissionId,
+    );
+    if (!row) return [];
+    return [
+      ...new Set([
+        row.student_id,
+        ...this.all<{ value: string }>(
+          "SELECT value FROM trusted_identity_values WHERE user_id=?",
+          row.student_id,
+        ).map((r) => r.value),
+      ]),
+    ];
+  }
+  private snapshot(submissionId: string): {
+    statement: string;
+    tests: LabTest[];
+    constraints: Constraint[];
+    limits: Limits;
+  } {
+    const row = this.one<{ payload: string }>(
+      "SELECT payload FROM submission_snapshots WHERE submission_id=?",
+      submissionId,
+    );
+    if (!row) throw new WorkflowError("invalid-input");
+    return JSON.parse(row.payload) as {
+      statement: string;
+      tests: LabTest[];
+      constraints: Constraint[];
+      limits: Limits;
+    };
+  }
   private recoverExpired(now: number): void {
+    this.db
+      .prepare(
+        "UPDATE attempt_safety SET cleanup='quarantined',reason='worker_lost' WHERE cleanup='pending' AND job_id IN (SELECT id FROM jobs WHERE state='leased' AND lease_expires_at<=?)",
+      )
+      .run(now);
     this.db
       .prepare(
         "UPDATE attempts SET outcome = 'lease_expired', finished_at = ? WHERE outcome = 'active' AND job_id IN (SELECT id FROM jobs WHERE state = 'leased' AND lease_expires_at <= ?)",
@@ -385,7 +484,7 @@ export class WorkflowRepository extends PublicationRepository {
     return this.write(() => {
       this.recoverExpired(now);
       const job = this.one<JobRow>(
-        "SELECT * FROM jobs WHERE state IN ('queued','retry_wait') AND available_at <= ? AND attempt_count < max_attempts ORDER BY available_at, id LIMIT 1",
+        "SELECT * FROM jobs WHERE state IN ('queued','retry_wait') AND available_at <= ? AND attempt_count < max_attempts AND NOT EXISTS (SELECT 1 FROM attempt_safety safe WHERE safe.job_id=jobs.id AND safe.cleanup='quarantined') ORDER BY available_at, id LIMIT 1",
         now,
       );
       if (!job) return null;
@@ -409,23 +508,7 @@ export class WorkflowRepository extends PublicationRepository {
             "UPDATE counted_submissions SET judge_status = 'running' WHERE id = ?",
           )
           .run(submission.counted_id);
-      const details = this.one<{
-        statement: string;
-        cpu_ms: number;
-        wall_ms: number;
-        memory_mb: number;
-        processes: number;
-        output_bytes: number;
-        compile_ms: number;
-      }>("SELECT * FROM lab_details WHERE lab_id = ?", submission.lab_id)!;
-      const limits: Limits = {
-        cpuMs: details.cpu_ms,
-        wallMs: details.wall_ms,
-        memoryMb: details.memory_mb,
-        processes: details.processes,
-        outputBytes: details.output_bytes,
-        compileMs: details.compile_ms,
-      };
+      const frozen = this.snapshot(submission.id);
       return {
         jobId: job.id,
         submissionId: submission.id,
@@ -435,13 +518,20 @@ export class WorkflowRepository extends PublicationRepository {
         leaseToken,
         leaseExpiresAt: now + leaseMs,
         source: submission.source,
-        statement: details.statement,
-        tests: this.all<LabTest>(
-          "SELECT input, expected_output AS expectedOutput FROM lab_tests WHERE lab_id = ? ORDER BY position",
-          submission.lab_id,
+        statement: frozen.statement,
+        snapshotVersion: Number(
+          this.one<{ version: number }>(
+            "SELECT version FROM submission_snapshots WHERE submission_id=?",
+            submission.id,
+          )!.version,
         ),
-        constraints: this.constraints(submission.lab_id),
-        limits,
+        previousCleanupConfirmed: !!this.one(
+          "SELECT 1 FROM attempt_safety WHERE job_id=? AND cleanup='confirmed'",
+          job.id,
+        ),
+        tests: frozen.tests,
+        constraints: frozen.constraints,
+        limits: frozen.limits,
         judgeResult:
           submission.judge_status === null
             ? null
@@ -628,7 +718,7 @@ export class WorkflowRepository extends PublicationRepository {
       if (existing?.state === "completed") return false;
       this.active(claim, now);
       const submission = this.submission(claim.submissionId);
-      const constraints = this.constraints(submission.lab_id);
+      const constraints = this.snapshot(submission.id).constraints;
       if (
         submission.judge_status !== "AC" ||
         !Array.isArray(evaluations) ||
@@ -717,15 +807,15 @@ export class WorkflowRepository extends PublicationRepository {
   getReviewQueue(actor: Principal, labId: number): { items: ReviewItem[] } {
     this.requireOwnedLab(actor, labId);
     const rows = this.all<Omit<ReviewItem, "evidence"> & { evidence: string }>(
-      `SELECT r.id AS reviewId, r.submission_id AS submissionId, r.constraint_id AS constraintId, c.text AS constraintText, c.deduction_tenths AS deductionTenths, v.verdict, v.evidence, v.reason, r.decision, r.version AS reviewVersion
+      `SELECT r.id AS reviewId, r.submission_id AS submissionId, r.constraint_id AS constraintId, json_extract(c.value,'$.text') AS constraintText, json_extract(c.value,'$.deductionTenths') AS deductionTenths, v.verdict, v.evidence, v.reason, r.decision, r.version AS reviewVersion
       FROM reviews r JOIN submissions s ON s.id = r.submission_id
       JOIN counted_heads h ON h.submission_id = s.id
       JOIN verdicts v ON v.submission_id = s.id AND v.constraint_id = r.constraint_id
-      JOIN lab_constraints c ON c.lab_id = s.lab_id AND c.constraint_id = r.constraint_id
+      JOIN submission_snapshots snap ON snap.submission_id=s.id JOIN json_each(snap.payload,'$.constraints') c ON json_extract(c.value,'$.id')=r.constraint_id
       WHERE s.lab_id = ? AND EXISTS (
         SELECT 1 FROM labs l JOIN ta_classes membership ON membership.class_id = l.class_id
         WHERE l.id = s.lab_id AND membership.ta_id = ?
-      ) ORDER BY s.received_at, s.id, c.position`,
+      ) ORDER BY s.received_at, s.id, c.key`,
       labId,
       actor.id,
     );
@@ -805,7 +895,7 @@ export class WorkflowRepository extends PublicationRepository {
         )
       ) {
         const deductions = this.one<{ total: number }>(
-          "SELECT COALESCE(SUM(c.deduction_tenths), 0) AS total FROM reviews r JOIN lab_constraints c ON c.lab_id = ? AND c.constraint_id = r.constraint_id WHERE r.submission_id = ? AND r.decision = 'violation'",
+          "SELECT COALESCE(SUM(json_extract(c.value,'$.deductionTenths')),0) AS total FROM reviews r JOIN submissions sub ON sub.id=r.submission_id JOIN submission_snapshots snap ON snap.submission_id=r.submission_id JOIN json_each(snap.payload,'$.constraints') c ON json_extract(c.value,'$.id')=r.constraint_id WHERE sub.lab_id = ? AND r.submission_id = ? AND r.decision='violation'",
           submission.lab_id,
           submission.id,
         )!.total;
