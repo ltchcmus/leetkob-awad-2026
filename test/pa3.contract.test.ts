@@ -227,7 +227,7 @@ test("G4: mutation routes reject a wrong role before validating the request body
   assert.equal(databaseSnapshot(repository), before);
 });
 
-test("G1 proposed: student status exposes only the final judge verdict before Publish", async (t) => {
+test("G1: student status exposes lifecycle and judge test verdicts without review data", async (t) => {
   const { labId, repository, request } = await fixture(t);
   const receipt = await submit(request, labId);
   const claim = repository.claimJob("g1-test-worker", {
@@ -248,11 +248,12 @@ test("G1 proposed: student status exposes only the final judge verdict before Pu
   const body = (await response.json()) as Record<string, unknown>;
   assert.deepEqual(body, {
     submissionId: receipt.submissionId,
+    status: "running",
     judgeVerdict: "AC",
+    testVerdicts: ["AC"],
+    createdAt: new Date(now).toISOString(),
   });
   for (const hiddenField of [
-    "status",
-    "testVerdicts",
     "constraintVerdicts",
     "deduction",
     "deductionTenths",

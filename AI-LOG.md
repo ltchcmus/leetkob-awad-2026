@@ -1268,3 +1268,33 @@ Local root verification: 142 regression tests and 51 Sandbox tests passed.
 An initial product attempt remained retry_wait with daemon_unavailable and no
 student verdict; standalone product verification and full Sandbox rerun passed.
 The infrastructure interruption is retained as a limitation, not a student error.
+
+## 2026-11-27 - Finalize API student-status visibility
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Review the integrated authentication, authorization and student
+status API against the FAQ, PA3 rubric and current handoffs; change only a
+verified gap and add contract/security regression coverage.
+
+**Changed:** The student-status HTTP response now forwards the persisted
+processing status, nullable judge verdict, per-test verdicts and receipt time.
+Tests cover queued, running and completed states; Admin and both TA roles remain
+403, another student remains non-disclosing 404, rejected reads keep the database
+unchanged, and constraint/model verdicts, deductions and evidence remain absent.
+Updated the proposed G1 interface document to match FAQ-02 and FAQ-08.
+
+**Rejected:** Changing the trusted `AUTH_ADAPTER_MODULE` loading boundary,
+hardcoding credentials, bypassing class/student ownership, exposing test input or
+output, or modifying persistence, worker, checker, evaluation data or CI. The
+existing authenticator already supports all three roles and fails closed for an
+invalid bearer credential; no source change was justified there.
+
+**Validation:** Baseline `npm test` passed 142 tests. The new contract tests
+first failed because the HTTP handler omitted status, per-test verdicts and the
+receipt timestamp. After the minimal response mapping, targeted API/auth/startup
+tests passed 20/20; the full suite passed 142/142. Lint, strict typecheck and
+format check passed on Node.js 24.11.0. No commit, push or merge was performed.
+

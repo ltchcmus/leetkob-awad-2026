@@ -350,7 +350,10 @@ export function createApp(options: AppOptions): Server {
         );
         sendJson(response, 200, {
           submissionId: result.submissionId,
+          status: result.status,
           judgeVerdict: result.judgeVerdict,
+          testVerdicts: result.testVerdicts,
+          createdAt: result.createdAt,
         });
         return;
       }
