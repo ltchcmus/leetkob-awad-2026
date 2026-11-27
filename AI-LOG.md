@@ -1268,3 +1268,62 @@ Local root verification: 142 regression tests and 51 Sandbox tests passed.
 An initial product attempt remained retry_wait with daemon_unavailable and no
 student verdict; standalone product verification and full Sandbox rerun passed.
 The infrastructure interruption is retained as a limitation, not a student error.
+
+## 27 November 2026 — Persistence and review follow-up
+
+Owner: Thịnh (23120200), assisted by Codex.
+
+**Input:** Công's published integration handoff and assigned persistence/review
+scope. Baseline `5c0de63`; branch `feat/thinh-persistence-review` targets
+`integration/pa3`. Existing execution/checker code and test-first history remain.
+
+**Kept:** The execution worker, reviewed sandbox, hard-rule/model router, immutable
+original evaluation files, TA deductions and fail-closed Publish boundary.
+
+**Changed:** Added migration 002 for versioned admission snapshots, attempt-UUID
+cleanup quarantine/audit, trusted identity context and durable quota reservations.
+Expired sandbox leases cannot launch another container until cleanup is reconciled.
+Provider dispatch reserves before POST, rejects duplicate dispatch and retains
+uncertain usage across restart. Metadata allowlists original source hash, policy,
+snapshot version and actual provider request/response identifiers separately.
+No real model call or paid provisioning was performed in this work.
+
+**Test chronology:** Initial persistence tests were committed in `a757c43` before
+implementation; the initial run exited 1 because the ledger module did not exist.
+The existing migration-count assertion changes from one to two for the new migration.
+The old process-local quarantine test now expects no subsequent claim and also
+asserts one attempt plus a durable quarantine row. This strengthens the requested
+contract; verdict-count assertions and original labels are unchanged.
+
+**Found during verification:** One full Windows/Docker run reported retryable
+`daemon_unavailable` in an own-case check, rather than a student verdict. A second
+run's worker startup failed while migration 002 was still being edited. I froze
+the source and reproduced the startup scenario separately; all six judge outcomes
+passed. These incomplete/failed runs are retained separately from final results.
+No test assertion was weakened to reinterpret an infrastructure error as Accepted.
+
+**Additional cases:** Five PA4-preparation cases cover alias/macro disguised calls,
+compliant unusual names, bubble-sort injection and insertion sort. They are separate
+from the original five own cases. All ten compiled and passed four test inputs
+inside the real reviewed sandbox in the targeted run. Hậu's independent label ACK
+is still pending; no checker predictions were used to choose labels.
+
+**Rejected:** Automatic requeue after uncertain cleanup, resetting budgets on
+restart, refunding unreported usage, relabelling Gemini response IDs as HTTP
+request IDs, rewriting the completed worker, or calling a local walkthrough a
+public-deployment sign-off. Public deployment and final tag/ZIP verification remain
+required team work.
+
+**Cleanup audit finding:** The first interrupted Docker call left a known created
+container after an empty cleanup read. I removed that exact local test container.
+Disconnected/timed-out Docker mutations now require durable operator reconciliation
+even if an immediate list reports no survivors, because a mutation can complete
+late. A regression exercises this case. The controller-timeout test now expects
+quarantine while still proving that cleanup was awaited; a separate positive test
+retains automatic retry for confirmed, explicitly retryable cancellation.
+
+**Verification scope:** The normal suite passes 152 tests with no skips. Real
+container checks prove ten Accepted own cases, killed-worker UUID cleanup and
+five HTTP actors/three sorting submissions with configured deductions and audit.
+The complete frozen-source Sandbox run and hosted PR checks are recorded in the
+follow-up evidence; earlier failed local runs are not reported as passing.
