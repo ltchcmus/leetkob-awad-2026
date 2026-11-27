@@ -6,7 +6,7 @@ on:
     branches: [main, integration/pa3]
   push:
     branches: [main, integration/pa3]
-    tags: [pa2]
+    tags: [pa2, pa3]
   workflow_dispatch:
 
 permissions:
