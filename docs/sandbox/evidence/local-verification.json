@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-21",
+  "timezone": "Asia/Saigon",
+  "controller_platform": "Windows / Node 24.11.0",
+  "sandbox_platform": "Docker Desktop Linux/amd64, cgroup v2",
+  "engine_version": "29.6.1",
+  "test_first_sha": "ca5690b3e695abeb50bd9096bc654dda7890dd99",
+  "judge_image": "leetkob-judge@sha256:de453c6fad8815456f0c736b2d00f72a676b3b5c248e36454b88c2480ed3b74b",
+  "commands": {
+    "npm ci": 0,
+    "npm run lint": 0,
+    "npm run format:check": 0,
+    "npm run typecheck": 0,
+    "npm test": 0,
+    "node --test --test-concurrency=1 --test-reporter=spec test/sandbox/*.test.ts": 0,
+    "node src/sandbox/example.ts": 0
+  },
+  "pa2_tests": {
+    "passed": 26,
+    "failed": 0
+  },
+  "sandbox_tests": {
+    "passed": 47,
+    "failed": 0,
+    "skipped": 0,
+    "harness_oracle": 16,
+    "admission_infrastructure": 7,
+    "extra_integration": 11,
+    "original_attack_and_positive_controls": 13
+  },
+  "source_sha256": {
+    ".github/workflows/sandbox.yml": "766733f6590bd28659e8f7c99aed264f43bf046d35509a2513df12a7c13a9a94",
+    "Dockerfile.judge": "ee367ab866463f0e40913f92a9a99951feb1e4943191066133f37769f7c8808c",
+    "judge/.dockerignore": "7f6d112156745aa83d3e78779719d74466f03b01d28eec96bfc56a21913447c9",
+    "judge/phase.py": "9671cd5c4e5659b54333a635dc9fdeadf05e2f1d041491855f7432d4c5b2c399",
+    "judge/policy.json": "69fe274a14040d15e098651aa94f59005f7839900f9e72cc683b09b4bf728d58",
+    "src/sandbox/contract.ts": "fce765f1f8117498146426db6e68a1ccdf9797eb7d005b3a75962be6987e3862",
+    "src/sandbox/docker.ts": "d77af864d11cfbe62c688e6eb8df71fab6c1405b2fe4b94e4f0d03e4385e78d3",
+    "src/sandbox/example.ts": "90fc38b60e2a32ef81c3f7cd7b614cac310052c963e69867b35c2804c06c902d",
+    "src/sandbox/runner.ts": "d3a54b68a4b3fc6a3327b84e702ab934cb378d5cde3ac743f1827127a5b02b8c",
+    "src/sandbox/validation.ts": "d72d4ba05b74b80dd215fdb52fcc561726e93e2fc58cff23228f79925e8ad9ad",
+    "src/sandbox/watchdog.ts": "a2c9297601f7abb89e91f9ffd3976f58311d047307b831ec7ca1567fe7c541c1",
+    "test/sandbox/assertions.ts": "6c8872dd7179c52b5b9f21a985b52458b2bc64d73348cc25e392b08fff48fa24",
+    "test/sandbox/extra-child.ts": "7d23358598065b19e7435dfb2264cc213722ae988c04bd7d24b21635f510b92f",
+    "test/sandbox/fixtures/compile-error.cpp": "57a37c33a33cf6ebd7aeea157a305f11f3f228accb1399350925bbf72afcdc40",
+    "test/sandbox/fixtures/m1-network.cpp": "7bdf8d500584c17ce1970b4717067fa7a5bc819459c600c68b001c46493b4a35",
+    "test/sandbox/fixtures/m2-cpu.cpp": "efa1b3712240e5e9fb8bb1af866624cd47c25b643838efbc2d84577d5a616661",
+    "test/sandbox/fixtures/m3-wall.cpp": "ad12e25552c913afe94595cb8f3ad15b84dee0682e20edb8326a0905d6b1ee78",
+    "test/sandbox/fixtures/m4-memory.cpp": "1f8ae47fdc32c6f64b952b5dd3f8232fcc99ca025ed326b409768313781952ab",
+    "test/sandbox/fixtures/m5-pids.cpp": "9a282323b652bab92f35e72267c354b74533a822080a4d91d0716515d5d1e7bf",
+    "test/sandbox/fixtures/m6-output.cpp": "c420ba377676f11fd6eb6e880b40b7d74b10cdbb4ca0fa7f79c90a8550810c82",
+    "test/sandbox/fixtures/m7-user.cpp": "5704054e0c53b4a0a5370c2ae0ee22314e6e6f0e90245c871c4b52861d88df9e",
+    "test/sandbox/fixtures/m8-host.cpp": "bc21801258e82af68f9a6d6e71292562b79aede88e37fc6371a251b269fe410d",
+    "test/sandbox/fixtures/m9-compile.cpp": "e2272e2730200f5f3cf53d5a48f409d176135ec15f181d65dada196cfb19fffc",
+    "test/sandbox/fixtures/m9-runtime.cpp": "1d376b8327aa783d8b5bc695fe5949ee3770e9e7815eb9005586d3383e2de8d6",
+    "test/sandbox/fixtures/valid.cpp": "20c69fc11082e03e9e21b095002fd5277c08ca95e48319cf18a555baa7664691",
+    "test/sandbox/harness.test.ts": "03f8e8f1c4c70144ea55edb25fb806b210f2ba5c2b6d03fd2a00e6689ee2b98e",
+    "test/sandbox/harness.ts": "311ac283e6e8ef26579298d03d6d2ed6a02a2ae33888c4cee0a3b9b00fbe3d15",
+    "test/sandbox/runner-child.ts": "728b05c9ce46e646dab967e7d5f79091dd369d6f6b3e7a34253d933685fe1b97",
+    "test/sandbox/runner.integration.test.ts": "d7c66f5de03f5f1741aa6970c094d45c179b06228813f807dcfd9737cef70eb6",
+    "test/sandbox/runner.unit.test.ts": "340a4c434cf6238e31fd23e688a5813384027a4df974b9af36d1a1912f6d2967",
+    "test/sandbox/sandbox.contract.test.ts": "25fb1f3dbf398f4d9907da7d9144e18a811b65cd9820caf744b75f35b5f60521"
+  },
+  "hosted_ci": {
+    "status": "PENDING",
+    "run_url": null,
+    "reason": "Workflow configured locally; no push authorized or performed."
+  },
+  "production_vps": "PENDING: no probe/deploy",
+  "limits": "Reference container policy only; no VPS sizing recommendation.",
+  "real_negative_controls": [
+    "CPU fixture with bounded wall-only termination rejected by original CPU oracle",
+    "192 MiB memory touch/readback succeeds under bounded 256 MiB and fails original M4 oracle"
+  ],
+  "observed_corrections": [
+    "Docker create HTTP failure mapped to container_start_failed after fake-daemon test found daemon_unavailable",
+    "Single-manifest build used after tagged image lookup inconsistency with attestations; root cause not established",
+    "Crash observer waits for actual program process using bounded unprivileged exec; expected exit 77 unchanged"
+  ],
+  "active_cancellation_and_worker_crash": "Both observers confirm /proc/1/comm=program before abort/exit; expected results unchanged."
+}

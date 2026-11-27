@@ -1066,3 +1066,76 @@ result.
 PA2 authentication/publication regression command passed all 26 tests. Lint,
 typecheck, format check and `git diff --check` exited 0. No commit, push or
 merge was performed.
+## 2026-11-21 — Implement isolated C++ judging and adversarial container tests
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** Codex, PowerShell, Git, fnm/Node 24.11.0, Docker Desktop/Engine 29.6.1,
+Python/pypdf, TypeScript, ESLint, Prettier and Gitleaks 8.30.1. No model provider calls.
+
+**Asked for:** Build a sandbox-only runner, prove its resource and isolation limits,
+configure security CI and prepare the worker integration boundary.
+
+**Kept:**
+
+- PA2 HTTP/authentication/database source, all existing tests and quality workflow.
+- The original 12 C++ fixtures and sandbox assertions without weakening expectations.
+- Test-first commit `ca5690b3e695abeb50bd9096bc654dda7890dd99`: 16 harness tests PASS
+  and 13 missing-runner RED results before implementation.
+
+**Changed:**
+
+- Added a digest-pinned judge build and a non-root, network-disabled compile/run runner
+  with trusted CPU/wall/output watchdogs, cgroup limits, bounded memory-only artifact
+  transport, pristine per-test containers and verified cleanup.
+- A fake-daemon test caught create rejection reported as daemon_unavailable; corrected
+  it to container_start_failed while preserving the separate infrastructure result.
+- Added cancellation and crash-cleanup tests. Corrected the crash observer's unsupported
+  process-list query and awaited actual program execution for crash/cancellation;
+  the expected exit 77 and cancellation assertions stayed fixed.
+- Used single-manifest builds after an observed Docker tag/digest lookup inconsistency;
+  the final digest resolves and all actual container tests pass. Root cause is unknown.
+- Added a sandbox workflow and worker documentation/example; no hosted CI run is claimed.
+
+**Rejected:**
+
+- Treating Docker flags, synthetic oracle results or local success as hosted/production proof.
+- Weak network/root/mount/real-secret experiments. Real weakened CPU/memory controls stayed
+  bounded and were rejected by the original oracles without changing their assertions.
+- Mapping infrastructure failure to a student CE/RE or allowing retry with uncertain cleanup.
+
+**Validation:**
+
+- npm ci, lint, format:check, typecheck and npm test exit 0; PA2 26/26 PASS.
+- Full sandbox command: exit 0, 47/47 PASS, 0 skipped, including real M1-M9.
+- Actual worker caller: exit 0, AC; no labeled containers left.
+- [Local evidence and source hashes](docs/sandbox/evidence/local-verification.json),
+  [test output](docs/sandbox/evidence/local-sandbox-tests.txt) and
+  [integration guide](docs/sandbox/worker-integration.md).
+- Hosted CI/tag evidence and production VPS verification remain pending.
+- No push, merge, tag, GitHub settings change, production deployment or model spending.
+
+## 2026-11-27 — Review sandbox CI and worker handoff
+
+**Owner:** Lê Thành Công — 23120222
+
+**Tool:** Codex, Git, PowerShell, GitHub REST API and Gitleaks.
+
+**Changed:** Scoped CI concurrency by ref so a queued release-tag run is insulated
+from branch and PR runs. Added a digest lookup check against the fresh build and
+logged the actual checkout SHA, built manifest reference, Docker image ID,
+reference policy hash and zero remaining sandbox containers on successful cleanup.
+Documented the worker adapter mapping and the retry/cleanup mismatch found in the
+current queue branch.
+
+**Rejected:** Treating prior Docker Desktop results or checks from teammate PRs as
+hosted sandbox results. The previous local evidence remains tied to its original
+source hashes. Publishing the branch and opening the PR are pending GitHub
+authentication.
+
+**Hosted review follow-up:** The four Quality jobs passed on the initial PR head.
+SonarCloud flagged dependency lifecycle execution and two executable lookups.
+The Sandbox workflow now installs dependencies with `--ignore-scripts`.
+The trusted controller invokes Docker using its system installation path, and
+the Windows test watchdog uses the System32 path for `taskkill.exe`.
+The sandbox fixtures and assertions are unchanged.
