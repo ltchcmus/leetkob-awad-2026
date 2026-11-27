@@ -11,7 +11,13 @@ import type {
   WorkerOptions,
 } from "./types.ts";
 
-class WorkerFailure extends Error {}
+class WorkerFailure extends Error {
+  readonly quarantined: boolean;
+  constructor(code: string, quarantined = false) {
+    super(code);
+    this.quarantined = quarantined;
+  }
+}
 
 function bounded<T>(
   action: (signal: AbortSignal) => Promise<T>,
@@ -74,13 +80,28 @@ function startHeartbeat(context: JobContext, leaseMs: number): () => void {
 async function ensureJudgeResult(context: JobContext): Promise<JudgeResult> {
   const { repo, claim, now, adapters, controller, timeoutMs } = context;
   if (claim.judgeResult !== null) return claim.judgeResult;
-  const result = await bounded(
-    (signal) => adapters.runInSandbox(claim, signal),
-    controller,
-    timeoutMs,
-    "sandbox_timeout",
-  );
+  const action = (signal: AbortSignal) => adapters.runInSandbox(claim, signal);
+  const timer = adapters.awaitsSandboxCleanup
+    ? setTimeout(
+        () => controller.abort(new WorkerFailure("sandbox_timeout")),
+        timeoutMs,
+      )
+    : undefined;
+  const result = await (
+    adapters.awaitsSandboxCleanup
+      ? action(controller.signal)
+      : bounded(action, controller, timeoutMs, "sandbox_timeout")
+  ).finally(() => clearTimeout(timer));
   if (result.kind === "infrastructure_error") {
+    if (adapters.awaitsSandboxCleanup) {
+      const code = /^[a-z0-9_]{1,80}$/u.test(result.code)
+        ? result.code
+        : "sandbox_protocol_error";
+      throw new WorkerFailure(
+        code,
+        result.retryable !== true || result.cleanupSucceeded !== true,
+      );
+    }
     const known = new Set([
       "sandbox_unavailable",
       "image_unavailable",
@@ -127,6 +148,7 @@ function persistCheckerResult(
 async function checkAccepted(context: JobContext): Promise<void> {
   const { claim, adapters, controller, timeoutMs } = context;
   const input = {
+    ...(adapters.awaitsSandboxCleanup && { labId: claim.labId }),
     solution: claim.submissionId,
     statement: claim.statement,
     source: claim.source,
@@ -176,7 +198,7 @@ export async function processOneJob(
   repo: WorkflowRepository,
   adapters: PipelineAdapters,
   options: WorkerOptions,
-): Promise<"idle" | "completed" | "retry" | "lease_lost"> {
+): Promise<"idle" | "completed" | "retry" | "lease_lost" | "quarantined"> {
   const now = options.now ?? Date.now;
   const leaseMs = options.leaseMs ?? 30_000;
   const timeoutMs = options.adapterTimeoutMs ?? 300_000;
@@ -200,6 +222,12 @@ export async function processOneJob(
   const stopHeartbeat = startHeartbeat(context, leaseMs);
   let phase: "sandbox" | "checker" = "sandbox";
   try {
+    if (
+      adapters.awaitsSandboxCleanup &&
+      !repo.renewLease(claim, now(), leaseMs)
+    ) {
+      return "lease_lost";
+    }
     const judge = await ensureJudgeResult(context);
     if (judge.judgeStatus === "AC") {
       phase = "checker";
@@ -208,6 +236,22 @@ export async function processOneJob(
     options.onEvent?.({ event: "job.completed", jobId: claim.jobId });
     return "completed";
   } catch (error) {
+    if (
+      phase === "sandbox" &&
+      adapters.awaitsSandboxCleanup &&
+      !leaseLost(error) &&
+      (!(error instanceof WorkerFailure) || error.quarantined)
+    ) {
+      options.onEvent?.({
+        event: "job.quarantined",
+        jobId: claim.jobId,
+        code:
+          error instanceof WorkerFailure
+            ? error.message
+            : "sandbox_cleanup_unconfirmed",
+      });
+      return "quarantined";
+    }
     return retryFailure(context, error, phase, options);
   } finally {
     stopHeartbeat();

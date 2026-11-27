@@ -40,6 +40,8 @@ async function main(): Promise<void> {
   )
     throw new Error("Invalid adapter module");
   const leaseMs = integer("WORKER_LEASE_MS", 30_000, 100, 3_600_000);
+  const once = process.env.WORKER_ONCE === "1";
+  const concurrency = once ? 1 : integer("WORKER_CONCURRENCY", 1, 1, 4);
   const pollMs = integer("WORKER_POLL_MS", 250, 10, 60_000);
   const adapterTimeoutMs = integer(
     "WORKER_ADAPTER_TIMEOUT_MS",
@@ -55,25 +57,39 @@ async function main(): Promise<void> {
   const log = (event: WorkerEvent) => console.info(JSON.stringify(event));
   try {
     log({ event: "worker.ready" });
-    const workerId = randomUUID();
-    // A worker finishes its current lease before polling; jobs are not parallelized here.
-    while (!stop.signal.aborted) {
-      const result = await processOneJob(repo, module.adapters, {
-        workerId,
-        leaseMs,
-        adapterTimeoutMs,
-        signal: stop.signal,
-        onEvent: log,
-      });
-      if (process.env.WORKER_ONCE === "1") break;
-      if (result === "idle" || result === "retry") {
-        try {
-          await delay(pollMs, undefined, { signal: stop.signal });
-        } catch {
-          if (!stop.signal.aborted) throw new Error("Worker polling failed");
+    const adapters = module.adapters;
+    const runLane = async () => {
+      const workerId = randomUUID();
+      while (!stop.signal.aborted) {
+        const result = await processOneJob(repo, adapters, {
+          workerId,
+          leaseMs,
+          adapterTimeoutMs,
+          signal: stop.signal,
+          onEvent: log,
+        });
+        if (result === "quarantined")
+          throw new Error("Operator reconciliation is required");
+        if (once) break;
+        if (result === "idle" || result === "retry") {
+          try {
+            await delay(pollMs, undefined, { signal: stop.signal });
+          } catch {
+            if (!stop.signal.aborted) throw new Error("Worker polling failed");
+          }
         }
       }
-    }
+    };
+    const lanes = await Promise.allSettled(
+      Array.from({ length: concurrency }, () =>
+        runLane().catch((error: unknown) => {
+          stop.abort();
+          throw error;
+        }),
+      ),
+    );
+    if (lanes.some((lane) => lane.status === "rejected"))
+      throw new Error("Worker lane failed");
   } finally {
     process.removeListener("SIGTERM", shutdown);
     process.removeListener("SIGINT", shutdown);
