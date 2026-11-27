@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { test } from "node:test";
+import { createApp } from "../../src/app.ts";
 import { people, workflowFixture } from "../helpers/workflow.ts";
 
 const run = promisify(execFile);
@@ -13,7 +15,7 @@ test(
   async (t) => {
     assert.equal(process.env.SANDBOX_RUN_ATTACKS, "1");
     assert.ok(process.env.SANDBOX_JUDGE_IMAGE);
-    const { repo, path, enqueue, labId } = workflowFixture(t);
+    const { repo, path, now, labId } = workflowFixture(t);
     const env = {
       ...process.env,
       DATABASE_PATH: path,
@@ -29,7 +31,31 @@ test(
         timeout: 20_000,
       });
     assert.doesNotMatch((await worker()).stdout, /job.claimed/u);
-    const receipt = enqueue();
+    const server = createApp({
+      repository: repo,
+      authenticate: () => people.student,
+      clock: () => new Date(now),
+    });
+    server.listen(0, "127.0.0.1");
+    t.after(() => {
+      server.closeAllConnections();
+      return new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    });
+    await once(server, "listening");
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const admitted = await fetch(
+      `http://127.0.0.1:${address.port}/v1/labs/${labId}/submissions`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ source: "int main() { return 0; }\n" }),
+      },
+    );
+    assert.equal(admitted.status, 202);
+    const receipt = (await admitted.json()) as { submissionId: string };
     assert.equal(
       repo.getSubmissionForStudent(people.student, receipt.submissionId).status,
       "queued",
