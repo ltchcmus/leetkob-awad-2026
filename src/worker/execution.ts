@@ -29,6 +29,32 @@ export function createExecutionAdapters(
         };
       }
       const { limits } = claim;
+      const fields = [
+        limits.cpuMs,
+        limits.wallMs,
+        limits.memoryMb,
+        limits.processes,
+        limits.outputBytes,
+        limits.compileMs,
+      ];
+      if (
+        fields.some((value) => !Number.isSafeInteger(value)) ||
+        limits.cpuMs < 1000 ||
+        limits.cpuMs > 5000 ||
+        limits.wallMs !== limits.cpuMs * 3 ||
+        limits.memoryMb < 64 ||
+        limits.memoryMb > 512 ||
+        limits.processes !== 16 ||
+        limits.outputBytes !== 1048576 ||
+        limits.compileMs !== 10000
+      ) {
+        return {
+          kind: "infrastructure_error",
+          code: "invalid_lab_limits",
+          retryable: false,
+          cleanupSucceeded: true,
+        };
+      }
       const policy: SandboxPolicy = {
         ...trustedPolicy,
         compile: {
