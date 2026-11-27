@@ -30,6 +30,10 @@ export type CheckerOutput = {
   evaluations: ConstraintEvaluation[];
 };
 
+export type HardRuleRoute =
+  | { kind: "semantic"; constraintId: string }
+  | ({ kind: "hard-rule" } & Omit<ConstraintEvaluation, "source">);
+
 type Token = {
   value: string;
   line: number;
@@ -312,28 +316,40 @@ function evaluateBanList(
     : { verdict: "pass", evidence: [] };
 }
 
-export function evaluateHardRules(input: CheckerInput): CheckerOutput {
+export function routeHardRules(input: CheckerInput): HardRuleRoute[] {
   const tokens = tokenize(input.source);
   const sourceLines = input.source
     .split("\n")
     .map((line) => line.replace(/\r$/, ""));
-  return {
-    solution: input.solution,
-    evaluations: input.constraints.map((constraint) => {
-      const names = parseBanNames(constraint.text);
-      if (names === undefined) {
-        return {
-          constraintId: constraint.id,
-          verdict: "unsure",
-          source: "hard-rule",
-          evidence: [],
-        };
+  return input.constraints.map((constraint) => {
+    const names = parseBanNames(constraint.text);
+    if (names === undefined) {
+      if (!/^Do not (use|call)\b/u.test(constraint.text)) {
+        return { kind: "semantic", constraintId: constraint.id };
       }
       return {
+        kind: "hard-rule",
         constraintId: constraint.id,
-        source: "hard-rule",
-        ...evaluateBanList(tokens, sourceLines, names),
+        verdict: "unsure",
+        evidence: [],
       };
-    }),
+    }
+    return {
+      kind: "hard-rule",
+      constraintId: constraint.id,
+      ...evaluateBanList(tokens, sourceLines, names),
+    };
+  });
+}
+
+export function evaluateHardRules(input: CheckerInput): CheckerOutput {
+  return {
+    solution: input.solution,
+    evaluations: routeHardRules(input).map((route) => ({
+      constraintId: route.constraintId,
+      verdict: route.kind === "hard-rule" ? route.verdict : "unsure",
+      evidence: route.kind === "hard-rule" ? route.evidence : [],
+      source: "hard-rule",
+    })),
   };
 }
