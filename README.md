@@ -26,10 +26,13 @@ claim of a public deployment, release, or full-rubric completion.
 - `MODEL_OFF=1` decides deterministic ban-list constraints locally, routes
   semantic work to `unsure`, and does not initialize a provider.
 - The latest official MODEL_OFF run has 102 pairs: 40 pass, 15 violation and
-  47 unsure. It has zero wrongful deductions, but 40.5% recall; the evaluator
-  exits 1 because it requires at least 90% recall and at most 20% unsure.
-- Public VPS E2E, release-tag CI, durable cross-process model quota/redaction
-  work, and a passing official evaluator remain outstanding.
+  47 unsure. It has zero wrongful deductions, but 40.5% recall; that evaluator
+  exits 1 under its own 90% recall/20% unsure thresholds. Their applicability to
+  the PA#3 rubric is not verified from repository sources.
+- Durable cross-process quotas and trusted redaction are integrated and covered
+  by persistence tests. Public deployment, release-tag CI and submission archive
+  work are tracked as packaging/operations handoff; this document does not treat
+  them as PA#3 implementation blockers without an authoritative requirement.
 
 See [PA3.md](PA3.md) for the architecture, local workflow and evidence gaps;
 see [SELF_ASSESSMENT_REPORT.md](SELF_ASSESSMENT_REPORT.md) for rubric status.

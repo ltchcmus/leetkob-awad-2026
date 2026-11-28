@@ -1,35 +1,27 @@
 # Integration verification
 
-## Dependency baseline
+## Current baseline
 
-The integration candidate extends `650b82d` with the checker image and eval
-runner. It includes G1/G4 `5cfd06f`, G2 `aace1b1`, G5 `1f93f84`,
-Sandbox `49a9079` and AI `1ce04f1`. The five dependency PRs remain open
-at these heads. No new dependency changes were found during the run.
-Both main and the peeled pa2 tag stayed at `1c194cd`.
+Current integration head: `08cac125b0d7271ae7511616eb9bb8995e9a5db4`, the
+merge of PR #24. It contains G4 startup/authentication hardening and the durable
+persistence/recovery work preserving PR #22 provenance.
 
-## Local checks
+## Verification on this baseline
 
-Node 24.11.0 dependency installation, lint, formatting, typecheck, the
-135-test suite, and the separate 48-test Docker suite passed. The Docker
-suite includes the HTTP admission, stopped worker, queued submission,
-process restart, real sandbox judge, checker and single SQLite verdict
-set test. No labelled sandbox container remained after the suite.
-Separate PA2, G1 and G5 commands passed 26, 11 and 12 tests respectively.
-These counts overlap the main suite.
+On 28 November 2026, Node 24.11.0 `npm ci`, lint, format, typecheck and
+`npm test` passed locally: 163 tests, zero failures and zero skips. Focused
+suites passed: PA2 26/26, G1/G4 HTTP 11/11, G5 checker/CLI 19/19 and
+persistence/recovery 36/36. GitHub push workflows passed directly on this SHA:
+[Quality](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/46132194592)
+and [Sandbox](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/46132194574).
 
-## Rubric evidence
+## Rubric interpretation boundary
 
-| Criterion | Status     | Evidence and remaining work                                                                                                         |
-| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| R1        | PARTIAL    | Local HTTP/worker flow proven; public VPS flow and accounts pending                                                                 |
-| R2        | PARTIAL    | M1–M9 local and earlier hosted Sandbox evidence; durable quarantine/reconciliation, VPS and release-tag CI pending                  |
-| R3        | PARTIAL    | MODEL_OFF has zero wrongful deductions, but hard-rule coverage is incomplete; findings assigned to Hậu                              |
-| R4        | PARTIAL    | Real-model dev run and call logs recorded; rejected evidence remains unsure; missing provider request IDs are a provider limitation |
-| R5        | PARTIAL    | Fake schema/timeout guards and local review/Publish regressions pass; deployment review flow and FAQ remain                         |
-| R6        | PARTIAL    | Docker checker and scorer accept predictions; scorer thresholds and separate eval cases need owner review                           |
-| R7        | PASS local | Test-first ancestry retained; integration commits preserve module history                                                           |
-| R8        | PARTIAL    | AI-LOG records technical work; final team submission audit pending                                                                  |
+The original PA#3 rubric is not stored in this repository. The checks above
+establish local implementation and CI evidence, but do not by themselves prove
+or disprove requirements for public deployment, a release tag, a ZIP, or a
+five-account live walkthrough. Those are packaging/operations handoff items for
+Công unless an authoritative assignment source makes them mandatory.
 
-The baseline supports team feature branches. Deployment and release approval
-require the remaining public E2E, persistence, review and tag checks.
+See [the final integration audit](pa3-final-integration-audit.md) for the
+implementation evidence and `NOT VERIFIED` rubric mapping.
