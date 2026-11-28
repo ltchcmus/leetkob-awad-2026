@@ -1268,3 +1268,121 @@ Local root verification: 142 regression tests and 51 Sandbox tests passed.
 An initial product attempt remained retry_wait with daemon_unavailable and no
 student verdict; standalone product verification and full Sandbox rerun passed.
 The infrastructure interruption is retained as a limitation, not a student error.
+
+## 2026-11-27 - Finalize API student-status visibility
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Review the integrated authentication, authorization and student
+status API against the FAQ, PA3 rubric and current handoffs; change only a
+verified gap and add contract/security regression coverage.
+
+**Changed:** The student-status HTTP response now forwards the persisted
+processing status, nullable judge verdict, per-test verdicts and receipt time.
+Tests cover queued, running and completed states; Admin and both TA roles remain
+403, another student remains non-disclosing 404, rejected reads keep the database
+unchanged, and constraint/model verdicts, deductions and evidence remain absent.
+Updated the proposed G1 interface document to match FAQ-02 and FAQ-08.
+
+**Rejected:** Changing the trusted `AUTH_ADAPTER_MODULE` loading boundary,
+hardcoding credentials, bypassing class/student ownership, exposing test input or
+output, or modifying persistence, worker, checker, evaluation data or CI. The
+existing authenticator already supports all three roles and fails closed for an
+invalid bearer credential; no source change was justified there.
+
+**Validation:** Baseline `npm test` passed 142 tests. The new contract tests
+first failed because the HTTP handler omitted status, per-test verdicts and the
+receipt timestamp. After the minimal response mapping, targeted API/auth/startup
+tests passed 20/20; the full suite passed 142/142. Lint, strict typecheck and
+format check passed on Node.js 24.11.0. No commit, push or merge was performed.
+
+## 2026-11-27 - Finalize lexical hard-rule matching
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Investigate the handed-off hard-rule findings, add regression
+tests before changing production logic, and rerun the configured offline
+evaluator without changing its data, labels or scorer.
+
+**Changed:** The syntax-aware checker now resolves lexically proven standard
+namespace imports and aliases, recognizes banned type references and control
+flow keywords, and ignores occurrences in comments, quoted text, raw strings
+and preprocessor definitions. An invoked macro that expands to a banned name
+remains `unsure`; an unrelated or dormant macro does not produce a verdict.
+Added trap and regression coverage for imports, aliases, macros, custom
+namespaces, multiline calls, strings, comments and prompt-like text.
+
+**Rejected:** Treating every `unsure` as a defect, treating a macro definition
+as executable code, applying deductions in the checker, adding model or network
+calls in offline mode, or changing official evaluation inputs, labels or scorer.
+
+**Validation:** The new regression set was red before the lexical changes.
+Targeted hard-rule, routing and shared-checker tests passed 15/15 after the
+change. The configured offline CLI completed successfully against evaluator
+revision `552c811db2d35a23d641bc4fdffc1ac120be1a28`; its evaluator exited 1
+because its broader recall and unsure thresholds were not met. It reported 102
+pairs: 40 pass, 13 violation and 49 unsure, with zero wrongful verdicts,
+35.1% recall and 48.0% unsure. All 30 handed-off hard-rule findings matched
+their expected evidence after the change; the remaining evaluator misses need
+separate scope triage before assigning a cause. No commit, push or merge was
+performed.
+
+## 2026-11-27 - Remediate deterministic macro hard rules
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Classify every remaining offline-evaluator `unsure`, repair only
+safe deterministic hard-rule gaps, and preserve the evaluator data and scoring
+rules.
+
+**Changed:** Added syntax-aware macro expansion handling for an invoked macro
+whose replacement itself contains a banned call or loop. It reports the
+definition line from the original source as evidence. Macro aliases that need
+additional expansion or semantic interpretation still return `unsure`.
+
+**Rejected:** Marking semantic algorithm, allocation or ownership constraints
+as pass/violation from names alone; changing evaluation labels, inputs, scorer,
+CLI routing or model-off behavior; and converting remaining uncertain pairs to
+decisions without proof.
+
+**Validation:** The two new macro regressions were red before the change and
+targeted checker tests passed 17/17 afterward. The offline CLI exited 0. The
+evaluator remained exit 1 because the generic thresholds apply to its complete
+prediction file: 102 pairs, 40 pass, 15 violation, 47 unsure, zero wrongful
+deductions, 40.5% recall and 46.1% unsure. This improved from 13 violations,
+49 unsure and 35.1% recall. Full tests passed 149/149; lint, strict typecheck
+and format check passed. No commit, push or merge was performed.
+
+## 2026-11-27 - Document the PA#3 prototype and assessment
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Update the project documentation from the historical PA#2 scope
+to the current PA#3 prototype, write an evidence-based architecture and demo
+guide, and assess each PA#3 rubric criterion without inventing deployment or
+evaluation success.
+
+**Changed:** Added `PA3.md`; updated the README with the PA#3 workflow,
+existing commands, API/privacy boundaries, checker CLI and current evaluator
+result; and placed a PA#3 rubric assessment ahead of the preserved PA#2
+historical assessment. The documents identify local-test evidence separately
+from public-deployment and evaluator evidence.
+
+**Rejected:** Claiming public deployment, release-tag CI, a passing official
+evaluator, production-enabled model dispatch, full rubric completion, or a
+real-model evaluation beyond the evidence already recorded in the repository.
+
+**Validation:** Command names were checked against `package.json`. The current
+official MODEL_OFF result is recorded as 102 pairs, 40 pass, 15 violation, 47
+unsure, 40.5% recall, zero wrongful deductions and evaluator exit 1. Markdown
+formatting and repository quality checks are run with the documentation change;
+their observed result is recorded in the accompanying handoff. No commit, push
+or merge was performed.

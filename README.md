@@ -1,8 +1,81 @@
-# LeeTKOB — PA#2
+# LeeTKOB — PA#3 prototype
 
 **CSC13114 — Advanced Web Application Development (2026–2027)**
 
-## Team Members
+## PA#3 prototype
+
+LeeTKOB helps a teaching assistant review C++ lab submissions before marks are
+published. A lab belongs to a class; students submit source code; a durable
+worker judges it in a constrained container; and Accepted submissions receive
+constraint evaluations for TA review. The TA, not the checker or model, makes
+the review decision before the existing PA#2 Publish boundary can publish
+marks.
+
+This branch is a PA#3 integration prototype. Local automated tests cover the
+API, persistence workflow, worker, sandbox adapter and checker. It is not a
+claim of a public deployment, release, or full-rubric completion.
+
+### Current evidence and limitations
+
+- Authentication supports Admin, TA and Student identities through a trusted
+  server-side adapter boundary. API authorization additionally verifies class
+  and resource ownership.
+- The submitting student sees only processing state, final judge verdict and
+  per-test verdicts before Publish—not constraint verdicts, deductions or
+  evidence.
+- `MODEL_OFF=1` decides deterministic ban-list constraints locally, routes
+  semantic work to `unsure`, and does not initialize a provider.
+- The latest official MODEL_OFF run has 102 pairs: 40 pass, 15 violation and
+  47 unsure. It has zero wrongful deductions, but 40.5% recall; the evaluator
+  exits 1 because it requires at least 90% recall and at most 20% unsure.
+- Public VPS E2E, release-tag CI, durable cross-process model quota/redaction
+  work, and a passing official evaluator remain outstanding.
+
+See [PA3.md](PA3.md) for the architecture, local workflow and evidence gaps;
+see [SELF_ASSESSMENT_REPORT.md](SELF_ASSESSMENT_REPORT.md) for rubric status.
+
+### Setup and quality checks
+
+Use Node.js 24.11.0 and run the commands defined by `package.json`:
+
+```powershell
+npm ci
+npm run lint
+npm run format:check
+npm run typecheck
+npm test
+```
+
+Focused suites:
+
+```powershell
+npm run test:pa2
+npm run test:g1-contract
+npm run test:g5
+```
+
+The HTTP process starts with `npm start`. The worker is a separate process and
+must share the same non-empty `DATABASE_PATH`:
+
+```powershell
+$env:MODEL_OFF = '1'
+node src/worker/main.ts
+```
+
+For an offline checker fixture, use the existing CLI entry point:
+
+```powershell
+$env:MODEL_OFF = '1'
+node src/checker/cli.ts --data test/eval-cases/own --predictions predictions.jsonl
+```
+
+The checker reads `statement.md`, `constraints.json` and C++ source files and
+writes one JSONL row per solution/constraint. Do not treat these local commands
+as proof of public deployment availability or a passing official evaluator.
+
+## PA#2 historical contract and release record
+
+### Team Members
 
 | Member            | Student ID | Responsibilities                                                  |
 | ----------------- | ---------- | ----------------------------------------------------------------- |

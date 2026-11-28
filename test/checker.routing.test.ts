@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { routeHardRules } from "../src/checker/hard-rules.ts";
 
-test("routing distinguishes terminal hard-rule unsure from semantic work", () => {
+test("routing distinguishes terminal macro-alias unsure from semantic work", () => {
   const routes = routeHardRules({
     solution: "synthetic",
-    source: "using namespace std;\nint main() {}\n",
+    source:
+      "#define ORDER std::sort\nint main() { int values[] = {2, 1}; ORDER(values, values + 2); }\n",
     statement: "Use an algorithm.",
     constraints: [
       { id: "alias", text: "Do not call `std::sort`.", deductionTenths: 10 },

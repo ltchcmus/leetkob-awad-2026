@@ -11,7 +11,8 @@ test("shared checker only sends explicitly semantic work to its router", async (
       labId: "synthetic",
       solution: "sample",
       statement: "Use an algorithm.",
-      source: "using namespace std;\nint main() {}\n",
+      source:
+        "#define ORDER std::sort\nint main() { int values[] = {2, 1}; ORDER(values, values + 2); }\n",
       constraints: [
         { id: "alias", text: "Do not call `std::sort`.", deductionTenths: 10 },
         { id: "semantic", text: "Use merge sort.", deductionTenths: 20 },

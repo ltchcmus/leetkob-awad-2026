@@ -25,15 +25,15 @@ lab, review queue, or another student's submission would disclose its
 existence. Failed authorization, validation, and precondition requests must
 not mutate the database.
 
-| Route                                  | Caller             | Proposed result             | Ownership/error semantics                                                                                                                                                                                                           |
-| -------------------------------------- | ------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/labs`                        | assigned TA        | `201` lab summary           | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                                                                      |
-| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary           | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                                                                                |
-| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt    | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                                                                                  |
-| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status        | Other students receive `404`; before Publish the response contains the final judge verdict only, not constraint evaluation, deduction, or evidence. Post-Publish visibility is PENDING Product Owners FAQ.                          |
-| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items          | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                                                                             |
-| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `204` with no response body | Successful review updates return `204 No Content` with an empty body. Student/admin callers get `403`; foreign review gets `404`; invalid input gets `400`; stale version, already-published, or stale-submission state gets `409`. |
-| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt  | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                                                                            |
+| Route                                  | Caller             | Proposed result             | Ownership/error semantics                                                                                                                                                                                                                                        |
+| -------------------------------------- | ------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/labs`                        | assigned TA        | `201` lab summary           | A TA creates only in an assigned class. Student/admin callers get `403`; a foreign/nonexistent class is `404`.                                                                                                                                                   |
+| `GET /v1/labs/{labId}`                 | owning TA          | `200` lab summary           | A foreign TA gets indistinguishable `404`; the response omits student code and unpublished verdicts.                                                                                                                                                             |
+| `POST /v1/labs/{labId}/submissions`    | enrolled student   | `202` submission receipt    | Foreign/missing lab or unenrolled student is `404`. Request retry semantics are **PENDING Thịnh**.                                                                                                                                                               |
+| `GET /v1/submissions/{submissionId}`   | submitting student | `200` student status        | Other students receive `404`; before Publish the response contains processing status, final judge verdict when available, and per-test verdicts only. It never contains constraint evaluation, deduction, or evidence. FAQ-02 and FAQ-08 define this visibility. |
+| `GET /v1/labs/{labId}/reviews`         | owning TA          | `200` review items          | Foreign TA gets `404`; includes per-constraint verdict/evidence only for the owning TA.                                                                                                                                                                          |
+| `POST /v1/reviews/{reviewId}/decision` | owning TA          | `204` with no response body | Successful review updates return `204 No Content` with an empty body. Student/admin callers get `403`; foreign review gets `404`; invalid input gets `400`; stale version, already-published, or stale-submission state gets `409`.                              |
+| `POST /v1/labs/{labId}/publish`        | owning TA          | existing PA2 `200` receipt  | Kept exactly as specified by `docs/contract/publish-lab.md`; it fails closed while queued/running judge work or required reviews remain.                                                                                                                         |
 
 ## Proposed DTOs
 
@@ -64,8 +64,11 @@ type SubmissionReceipt = {
 
 type StudentSubmissionStatus = {
   submissionId: string;
-  judgeVerdict: "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
-  // No constraint verdict, deduction, deductionTenths, or evidence before Publish.
+  status: "queued" | "running" | "retrying" | "completed" | "failed";
+  judgeVerdict: "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | null;
+  testVerdicts: Array<"AC" | "WA" | "TLE" | "MLE" | "RE" | "CE">;
+  createdAt: string;
+  // No test input/output, constraint verdict, deduction, deductionTenths, or evidence before Publish.
 };
 
 type ConstraintVerdict = {
@@ -153,9 +156,13 @@ are **PENDING Công/Hậu**.
 
 ### Student status visibility
 
-`GET /v1/submissions/{submissionId}` returns the final judge verdict to the submitting student as `judgeVerdict`: `AC`, `WA`, `TLE`, `MLE`, `RE`, or `CE`. This judge verdict is the result of compiling and running the C++ submission against lab tests.
+`GET /v1/submissions/{submissionId}` returns the processing `status`, nullable final
+judge verdict as `judgeVerdict`, and `testVerdicts` to the submitting student. A
+queued/running submission has `judgeVerdict: null` and an empty `testVerdicts`
+array. The per-test array contains verdicts only: it never exposes hidden test
+input or output. This is the FAQ-02 visibility rule.
 
-Before Publish, this response must not contain `constraintVerdicts`, `deduction`, `deductionTenths`, or internal `evidence`. Constraint evaluation is separate from the judge verdict and remains TA-only until the Product Owners FAQ and Publish policy are confirmed. The exact student-facing representation after Publish is **PENDING Product Owners FAQ**.
+Before Publish, this response must not contain `constraintVerdicts`, `deduction`, `deductionTenths`, or internal `evidence`. Constraint evaluation is separate from the judge verdict and remains TA-only under FAQ-08. The exact student-facing representation after Publish is **PENDING Product Owners FAQ**.
 
 ### Shared checker contract for G5/G6
 

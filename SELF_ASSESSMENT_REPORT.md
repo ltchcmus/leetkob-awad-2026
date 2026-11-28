@@ -1,4 +1,76 @@
-# PA2 self-assessment — LeeTKOB
+# PA#3 self-assessment — LeeTKOB
+
+## Evidence-based assessment
+
+- **Course:** CSC13114, Advanced Web Application Development, 2026–2027.
+- **Checkpoint:** PA#3 prototype with the LLM feature running.
+- **Repository:** [ltchcmus/leetkob-awad-2026](https://github.com/ltchcmus/leetkob-awad-2026).
+- **Assessment status:** provisional and evidence-based; this is not a claimed
+  full-rubric pass or release assessment.
+
+The PA#3 rubric is marked from the public deployment, repository and repeatable
+runs. This branch has local integration evidence, but it does not have public
+deployment evidence or a passing official evaluator. The statuses below state
+only what the repository currently supports.
+
+| Rubric criterion                    | Status     | Evidence and gap                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1 — End-to-end deployment flow     | PARTIAL    | Local HTTP/SQLite/worker tests cover lab creation, submission, status, TA review and ownership. A public deployment, five-account walkthrough and independently reachable product flow are not verified.                                                                                                                         |
+| R2 — Queue and sandbox              | PARTIAL    | Durable job/worker and sandbox tests exist, including restart and policy cases. Public operational proof, durable cleanup reconciliation after an uncertain attempt, and release-tag CI remain open.                                                                                                                             |
+| R3 — Hard rules first               | PARTIAL    | Token-aware hard rules run before semantic routing; tests cover comments, strings, raw strings, custom namespaces, imports, aliases, macros, multiline calls and injections. MODEL_OFF has zero wrongful deductions and all current ban-list pairs are decided, but the evaluator as a whole fails its recall/unsure thresholds. |
+| R4 — Semantic model constraints     | PARTIAL    | The repository contains provider, schema, timeout, redaction and call-log boundaries, plus recorded limited real-model evidence. Production dispatch remains disabled pending durable quota and redaction-context work. The official real-model evaluation is not a passing run.                                                 |
+| R5 — Limits and TA review queue     | PARTIAL    | Schema/timeout guards and TA-only review/publish fail-closed paths have local tests. Public workflow verification and final FAQ/deployment review remain open.                                                                                                                                                                   |
+| R6 — Checker command and first eval | PARTIAL    | `src/checker/cli.ts` accepts dataset and prediction paths and writes JSONL. The latest MODEL_OFF CLI run exits 0, but official evaluator exit is 1: 40.5% recall and 46.1% unsure miss the 90%/20% thresholds.                                                                                                                   |
+| R7 — Test-first history             | PASS local | Repository history retains test-first work; the current suite passes 149/149 locally. Hosted/release verification is not asserted here.                                                                                                                                                                                          |
+| R8 — AI log                         | PARTIAL    | [AI-LOG.md](AI-LOG.md) retains historical records and records current changes, rejected alternatives and validation. A final submission audit remains necessary.                                                                                                                                                                 |
+
+## Measured checker evidence
+
+The latest official MODEL_OFF evaluation used evaluator revision
+`552c811db2d35a23d641bc4fdffc1ac120be1a28`.
+
+| Metric              |      Observed | Rubric threshold |
+| ------------------- | ------------: | ---------------: |
+| Pairs               |           102 |                — |
+| Pass                |            40 |                — |
+| Violation           |            15 |                — |
+| Unsure              |            47 |      at most 20% |
+| Wrongful deductions |             0 |                0 |
+| Recall              | 40.5% (15/37) |     at least 90% |
+| CLI exit            |             0 |                0 |
+| Evaluator exit      |             1 |                0 |
+
+The checker does not claim an evaluation pass. It deliberately leaves semantic
+constraints `unsure` in MODEL_OFF mode rather than inventing a deduction. The
+remaining evaluator gap must be addressed through evidence-backed semantic
+evaluation or another reviewed mechanism.
+
+## Security and privacy evidence
+
+- Authentication is separate from class/resource ownership.
+- Cross-class TA requests and cross-student status reads receive non-disclosing
+  failures in HTTP tests.
+- Before Publish, students do not receive constraint verdicts, deductions or
+  evidence; only status and judge verdict information is exposed.
+- Submitted C++ is handled by the worker/sandbox boundary, not the HTTP handler.
+- No model credential belongs in the judge container, source fixture or log.
+
+## What is not claimed
+
+- A production deployment, public uptime, or deployment authentication setup.
+- A release/tag, completed CI gate, or full PA#3 score.
+- A passing official MODEL_OFF or real-model evaluation.
+- Durable multi-process model billing/quota enforcement or a production-enabled
+  model worker.
+- An 80-submission load result, appeal workflow, or final operations evidence.
+
+Detailed architecture and reproducible commands are in [PA3.md](PA3.md).
+The existing PA#2 assessment below is retained as a historical record and must
+not be read as a PA#3 score.
+
+---
+
+## Historical PA#2 self-assessment
 
 - **Course:** CSC13114, Advanced Web Application Development, 2026–2027.
 - **Checkpoint:** PA#2 harness and quality gate.

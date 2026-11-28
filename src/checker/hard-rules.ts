@@ -39,6 +39,14 @@ type Token = {
   line: number;
 };
 
+type LexicalFacts = {
+  namespaceAliases: Map<string, string>;
+  usingNamespaces: Set<string>;
+  usingNames: Map<string, string[]>;
+  macros: Map<string, Token[]>;
+  namespaces: Array<string | undefined>;
+};
+
 function isIdentifierStart(character: string): boolean {
   const code = character.charCodeAt(0);
   return (
@@ -210,14 +218,20 @@ function qualifiedNameParts(name: string): string[] | undefined {
   return parts;
 }
 
-function matchesQualifiedCall(
+function matchesName(
   tokens: Token[],
   index: number,
   parts: string[],
-): Token | undefined {
+  aliases: Map<string, string>,
+): { terminal: Token; next: number } | undefined {
   let cursor = index;
   for (let partIndex = 0; partIndex < parts.length; partIndex += 1) {
-    if (tokens[cursor]?.value !== parts[partIndex]) {
+    const actual = tokens[cursor]?.value;
+    const expected = parts[partIndex];
+    if (
+      actual !== expected &&
+      !(partIndex === 0 && aliases.get(actual ?? "") === expected)
+    ) {
       return undefined;
     }
     cursor += 1;
@@ -228,60 +242,174 @@ function matchesQualifiedCall(
       cursor += 1;
     }
   }
-  if (tokens[cursor]?.value !== "(") {
-    return undefined;
-  }
-
-  const previous = tokens[index - 1]?.value;
-  if (
-    previous === "using" ||
-    previous === "typedef" ||
-    previous === "void" ||
-    previous === "int" ||
-    previous === "auto" ||
-    previous === "class" ||
-    previous === "struct"
-  ) {
-    return undefined;
-  }
-  return tokens[cursor - 1];
+  return { terminal: tokens[cursor - 1]!, next: cursor };
 }
 
-function hasAmbiguousAlias(tokens: Token[], parts: string[]): boolean {
-  const terminal = parts.at(-1);
-  const root = parts[0];
-  if (terminal === undefined || root === undefined) {
-    return true;
-  }
+function lexicalFacts(tokens: Token[]): LexicalFacts {
+  const namespaceAliases = new Map<string, string>();
+  const usingNamespaces = new Set<string>();
+  const usingNames = new Map<string, string[]>();
+  const macros = new Map<string, Token[]>();
+  const namespaces: Array<string | undefined> = [];
+  const scopes: Array<string | undefined> = [];
 
   for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index]?.value === "using") {
-      if (
-        tokens[index + 1]?.value === "namespace" &&
-        tokens[index + 2]?.value === root
-      ) {
-        return true;
-      }
-      if (
-        tokens[index + 1]?.value === root &&
-        tokens[index + 2]?.value === "::" &&
-        tokens[index + 3]?.value === terminal
-      ) {
-        return true;
-      }
+    const token = tokens[index]!;
+    namespaces.push([...scopes].reverse().find((scope) => scope !== undefined));
+    if (
+      token.value === "using" &&
+      tokens[index + 1]?.value === "namespace" &&
+      tokens[index + 2] !== undefined
+    ) {
+      usingNamespaces.add(tokens[index + 2]!.value);
     }
     if (
-      tokens[index]?.value === "namespace" &&
-      tokens[index + 2]?.value === "=" &&
-      tokens[index + 3]?.value === root
+      token.value === "using" &&
+      tokens[index + 1] !== undefined &&
+      tokens[index + 2]?.value === "::" &&
+      tokens[index + 3] !== undefined
     ) {
-      return true;
+      usingNames.set(tokens[index + 3]!.value, [
+        tokens[index + 1]!.value,
+        tokens[index + 3]!.value,
+      ]);
     }
-    if (tokens[index]?.value === "#" && tokens[index + 1]?.value === "define") {
+    if (
+      token.value === "namespace" &&
+      tokens[index + 1] !== undefined &&
+      tokens[index + 2]?.value === "=" &&
+      tokens[index + 3] !== undefined
+    ) {
+      namespaceAliases.set(tokens[index + 1]!.value, tokens[index + 3]!.value);
+    }
+    if (
+      token.value === "#" &&
+      tokens[index + 1]?.value === "define" &&
+      tokens[index + 2] !== undefined
+    ) {
+      const name = tokens[index + 2]!;
+      const replacement: Token[] = [];
+      for (
+        let cursor = index + 3;
+        tokens[cursor]?.line === token.line;
+        cursor += 1
+      ) {
+        replacement.push(tokens[cursor]!);
+      }
+      macros.set(name.value, replacement);
+    }
+    if (token.value === "{") {
+      scopes.push(
+        tokens[index - 2]?.value === "namespace"
+          ? tokens[index - 1]?.value
+          : undefined,
+      );
+    }
+    if (token.value === "}") {
+      scopes.pop();
+    }
+  }
+  return { namespaceAliases, usingNamespaces, usingNames, macros, namespaces };
+}
+
+function isBannedUse(
+  tokens: Token[],
+  index: number,
+  match: { terminal: Token; next: number },
+): boolean {
+  const next = tokens[match.next]?.value;
+  if (next === "(" || next === "<") return true;
+  return ["for", "while", "do", "goto"].includes(tokens[index]!.value);
+}
+
+function isPreprocessorToken(tokens: Token[], index: number): boolean {
+  const line = tokens[index]!.line;
+  for (
+    let cursor = index;
+    cursor >= 0 && tokens[cursor]!.line === line;
+    cursor -= 1
+  ) {
+    if (tokens[cursor]!.value === "#") return true;
+  }
+  return false;
+}
+
+function isDeclaredFunction(
+  tokens: Token[],
+  facts: LexicalFacts,
+  index: number,
+  terminal: string,
+): boolean {
+  const namespace = facts.namespaces[index];
+  for (let cursor = 0; cursor < tokens.length; cursor += 1) {
+    if (
+      tokens[cursor]?.value === terminal &&
+      tokens[cursor + 1]?.value === "(" &&
+      facts.namespaces[cursor] === namespace &&
+      ["void", "int", "auto", "long", "char", "bool"].includes(
+        tokens[cursor - 1]?.value ?? "",
+      )
+    ) {
       return true;
     }
   }
   return false;
+}
+
+function hasRelevantMacro(
+  tokens: Token[],
+  facts: LexicalFacts,
+  parts: string[],
+): boolean {
+  for (const [name, replacement] of facts.macros) {
+    const match = replacement.findIndex((_, index) =>
+      matchesName(replacement, index, parts, facts.namespaceAliases),
+    );
+    if (
+      match !== -1 &&
+      tokens.some(
+        (token, index) =>
+          token.value === name &&
+          tokens[index + 1]?.value === "(" &&
+          !isPreprocessorToken(tokens, index),
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function macroViolation(
+  tokens: Token[],
+  facts: LexicalFacts,
+  parts: string[],
+): Token | undefined {
+  for (const [name, replacement] of facts.macros) {
+    const invoked = tokens.some(
+      (token, index) =>
+        token.value === name &&
+        tokens[index + 1]?.value === "(" &&
+        !isPreprocessorToken(tokens, index),
+    );
+    if (!invoked) continue;
+
+    for (let index = 0; index < replacement.length; index += 1) {
+      const match = matchesName(
+        replacement,
+        index,
+        parts,
+        facts.namespaceAliases,
+      );
+      if (match !== undefined && isBannedUse(replacement, index, match)) {
+        return tokens.find(
+          (token, tokenIndex) =>
+            token.value === name && isPreprocessorToken(tokens, tokenIndex),
+        );
+      }
+    }
+  }
+  return undefined;
 }
 
 function evaluateBanList(
@@ -289,6 +417,7 @@ function evaluateBanList(
   sourceLines: string[],
   names: string[],
 ): Pick<ConstraintEvaluation, "verdict" | "evidence"> {
+  const facts = lexicalFacts(tokens);
   let uncertain = false;
   for (const name of names) {
     const parts = qualifiedNameParts(name);
@@ -297,17 +426,73 @@ function evaluateBanList(
       continue;
     }
     for (let index = 0; index < tokens.length; index += 1) {
-      const call = matchesQualifiedCall(tokens, index, parts);
-      if (call !== undefined) {
+      if (isPreprocessorToken(tokens, index)) continue;
+      const match = matchesName(tokens, index, parts, facts.namespaceAliases);
+      if (match !== undefined && isBannedUse(tokens, index, match)) {
         return {
           verdict: "violation",
           evidence: [
-            { line: call.line, text: sourceLines[call.line - 1] ?? "" },
+            {
+              line: match.terminal.line,
+              text: sourceLines[match.terminal.line - 1] ?? "",
+            },
           ],
         };
       }
     }
-    if (hasAmbiguousAlias(tokens, parts)) {
+    const root = parts[0]!;
+    const terminal = parts.at(-1)!;
+    const imported =
+      parts.length > 1 &&
+      (facts.usingNamespaces.has(root) ||
+        facts.usingNames.get(terminal)?.join("::") === parts.join("::"));
+    if (imported || parts.length === 1) {
+      for (let index = 0; index < tokens.length; index += 1) {
+        if (
+          isPreprocessorToken(tokens, index) ||
+          tokens[index]?.value !== terminal ||
+          tokens[index - 1]?.value === "::"
+        ) {
+          continue;
+        }
+        const match = { terminal: tokens[index]!, next: index + 1 };
+        if (!isBannedUse(tokens, index, match)) continue;
+        if (
+          facts.namespaces[index] !== undefined &&
+          facts.namespaces[index] !== root
+        ) {
+          if (isDeclaredFunction(tokens, facts, index, terminal)) continue;
+          uncertain = true;
+          continue;
+        }
+        if (isDeclaredFunction(tokens, facts, index, terminal)) {
+          uncertain = true;
+          continue;
+        }
+        return {
+          verdict: "violation",
+          evidence: [
+            {
+              line: match.terminal.line,
+              text: sourceLines[match.terminal.line - 1] ?? "",
+            },
+          ],
+        };
+      }
+    }
+    const macroEvidence = macroViolation(tokens, facts, parts);
+    if (macroEvidence !== undefined) {
+      return {
+        verdict: "violation",
+        evidence: [
+          {
+            line: macroEvidence.line,
+            text: sourceLines[macroEvidence.line - 1] ?? "",
+          },
+        ],
+      };
+    }
+    if (hasRelevantMacro(tokens, facts, parts)) {
       uncertain = true;
     }
   }

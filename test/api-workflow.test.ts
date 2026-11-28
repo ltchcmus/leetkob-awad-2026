@@ -160,7 +160,7 @@ test("4B: assigned TA creates a persisted lab; foreign TA cannot create in its c
   assert.equal(databaseSnapshot(repository), before);
 });
 
-test("4B: enrolled student receives a persisted submission receipt and private judge status", async (t) => {
+test("4B: student status exposes queue progress and judge test verdicts without review data", async (t) => {
   const { labId, repository, request } = await fixture(t);
   const submitted = await request(`/v1/labs/${labId}/submissions`, "student", {
     method: "POST",
@@ -188,8 +188,60 @@ test("4B: enrolled student receives a persisted submission receipt and private j
     "int main() { return 0; }\n",
   );
 
+  const expectedStatus = (input: {
+    status: string;
+    judgeVerdict: string | null;
+    testVerdicts: string[];
+  }) => ({
+    submissionId: receipt.submissionId,
+    createdAt: new Date(now).toISOString(),
+    ...input,
+  });
+  const assertPrivateStatus = (body: Record<string, unknown>) => {
+    for (const hidden of [
+      "constraintVerdicts",
+      "deduction",
+      "deductionTenths",
+      "evidence",
+    ]) {
+      assert.equal(Object.hasOwn(body, hidden), false);
+    }
+  };
+
+  const queued = await request(
+    `/v1/submissions/${receipt.submissionId}`,
+    "student",
+  );
+  assert.equal(queued.status, 200);
+  const queuedBody = (await queued.json()) as Record<string, unknown>;
+  assert.deepEqual(
+    queuedBody,
+    expectedStatus({
+      status: "queued",
+      judgeVerdict: null,
+      testVerdicts: [],
+    }),
+  );
+  assertPrivateStatus(queuedBody);
+
   const claim = repository.claimJob("test-worker", { now, leaseMs: 30_000 });
   assert.ok(claim);
+  const running = await request(
+    `/v1/submissions/${receipt.submissionId}`,
+    "student",
+  );
+  assert.equal(running.status, 200);
+  const runningBody = (await running.json()) as Record<string, unknown>;
+  assert.deepEqual(
+    runningBody,
+    expectedStatus({
+      status: "running",
+      judgeVerdict: null,
+      testVerdicts: [],
+    }),
+  );
+  assertPrivateStatus(runningBody);
+
   repository.recordJudgeResult(
     claim,
     { judgeStatus: "WA", tests: ["WA"] },
@@ -201,22 +253,26 @@ test("4B: enrolled student receives a persisted submission receipt and private j
   );
   assert.equal(status.status, 200);
   const body = (await status.json()) as Record<string, unknown>;
-  assert.deepEqual(body, {
-    submissionId: receipt.submissionId,
-    judgeVerdict: "WA",
-  });
-  for (const hidden of [
-    "status",
-    "testVerdicts",
-    "constraintVerdicts",
-    "deduction",
-    "deductionTenths",
-    "evidence",
-  ]) {
-    assert.equal(Object.hasOwn(body, hidden), false);
-  }
+  assert.deepEqual(
+    body,
+    expectedStatus({
+      status: "completed",
+      judgeVerdict: "WA",
+      testVerdicts: ["WA"],
+    }),
+  );
+  assertPrivateStatus(body);
 
   const before = databaseSnapshot(repository);
+  for (const account of ["admin", "owner", "foreign"] as const) {
+    const denied = await request(
+      `/v1/submissions/${receipt.submissionId}`,
+      account,
+    );
+    await expectProblem(denied, 403);
+    assert.equal(databaseSnapshot(repository), before);
+  }
+
   const foreign = await request(
     `/v1/submissions/${receipt.submissionId}`,
     "otherStudent",
