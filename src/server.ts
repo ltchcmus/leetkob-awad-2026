@@ -8,16 +8,23 @@ import { pathToFileURL } from "node:url";
 import type { AppOptions } from "./app.ts";
 
 const token = process.env.DEMO_AUTH_TOKEN ?? "";
+const host = process.env.HOST ?? "127.0.0.1";
 const adapterPath = process.env.AUTH_ADAPTER_MODULE;
 if (adapterPath && !isAbsolute(adapterPath))
   throw new Error("Trusted auth adapter must use an absolute path");
+const requiresTrustedAdapter =
+  process.env.NODE_ENV === "production" ||
+  (host !== "127.0.0.1" && host !== "::1");
+if (!adapterPath && requiresTrustedAdapter)
+  throw new Error(
+    "A trusted authentication adapter is required outside loopback development.",
+  );
 const authenticate: AppOptions["authenticate"] = adapterPath
   ? (await import(pathToFileURL(adapterPath).href)).authenticate
   : demoAuthenticator(token);
 if (typeof authenticate !== "function")
   throw new Error("Invalid trusted authentication adapter");
 const databasePath = process.env.DATABASE_PATH ?? "data/leetkob.db";
-const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? "3000");
 if (!Number.isInteger(port) || port < 1 || port > 65535)
   throw new Error("PORT must be 1 through 65535.");

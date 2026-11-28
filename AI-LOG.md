@@ -1386,3 +1386,27 @@ unsure, 40.5% recall, zero wrongful deductions and evaluator exit 1. Markdown
 formatting and repository quality checks are run with the documentation change;
 their observed result is recorded in the accompanying handoff. No commit, push
 or merge was performed.
+
+## 2026-11-28 - Harden production authentication startup
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Make the API entrypoint fail closed when a production or
+non-loopback server lacks a trusted authentication adapter, and prepare a
+repeatable five-account local G4 walkthrough.
+
+**Changed:** The server now requires an absolute trusted adapter outside
+loopback development. Added isolated process tests for adapter startup failures,
+demo fallback confinement, trusted-adapter authentication and authorization.
+Added a local five-account walkthrough that states the worker/deployment limits.
+
+**Rejected:** Public Admin bootstrap routes, real credentials, fallback demo
+authentication in production, changes to Publish, persistence, worker, checker,
+CI or evaluation data.
+
+**Validation:** The targeted startup/auth/API suite passed 13 tests on Node.js
+24.11.0. The full suite passed 153 tests with zero failures or skips; lint,
+format check, strict typecheck and `git diff --check` exited 0. No secrets were
+introduced into the reviewed diff. No commit, push or merge was performed.
