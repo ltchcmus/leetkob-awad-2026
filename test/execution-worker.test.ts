@@ -24,6 +24,33 @@ const policy: SandboxPolicy = {
   workBytes: 1024 * 1024,
 };
 
+test("uncertain Docker mutation requires reconciliation even after an empty cleanup read", async (t) => {
+  const { repo, now, enqueue } = workflowFixture(t);
+  enqueue();
+  const adapter = createExecutionAdapters(policy, async () => ({
+    kind: "infrastructure_error",
+    code: "daemon_unavailable",
+    retryable: true,
+    cleanup: { attempted: true, succeeded: true, remainingContainerIds: [] },
+  }));
+  assert.equal(
+    await processOneJob(repo, adapter, {
+      workerId: "first",
+      now: () => now,
+      leaseMs: 100,
+    }),
+    "quarantined",
+  );
+  assert.equal(
+    await processOneJob(repo, adapter, {
+      workerId: "next",
+      now: () => now + 101,
+    }),
+    "idle",
+  );
+  assert.equal(repo.listQuarantinedAttempts().length, 1);
+});
+
 test("AC persists routed verdicts through SQLite and dispatches only the semantic constraint", async (t) => {
   const { repo, now, enqueue } = workflowFixture(t);
   enqueue();
@@ -136,7 +163,10 @@ test("uncertain cleanup quarantines execution and reclaim opens no new sandbox",
     workerId: "next",
     now: () => now + 101,
   });
-  assert.equal(next, "quarantined");
+  // Durable quarantine prevents even claiming another attempt until reconciliation.
+  assert.equal(next, "idle");
+  assert.equal(repo.listQuarantinedAttempts().length, 1);
+  assert.equal(repo.db.prepare("SELECT COUNT(*) n FROM attempts").get()?.n, 1);
   assert.equal(calls, 1);
   assert.equal(
     repo.getSubmissionForStudent(people.student, receipt.submissionId)
@@ -149,7 +179,7 @@ test("uncertain cleanup quarantines execution and reclaim opens no new sandbox",
   );
 });
 
-test("clean retryable failure waits for sandbox cleanup after cancellation", async (t) => {
+test("controller timeout waits for cleanup before durable quarantine", async (t) => {
   const { repo, now, enqueue } = workflowFixture(t);
   enqueue();
   const stop = new AbortController();
@@ -179,9 +209,28 @@ test("clean retryable failure waits for sandbox cleanup after cancellation", asy
       now: () => now,
       signal: stop.signal,
     }),
-    "retry",
+    "quarantined",
   );
   assert.equal(settled, true);
+});
+
+test("confirmed retryable cancellation can still retry without quarantine", async (t) => {
+  const { repo, now, enqueue } = workflowFixture(t);
+  enqueue();
+  const adapter = createExecutionAdapters(policy, async () => ({
+    kind: "infrastructure_error",
+    code: "cancelled",
+    retryable: true,
+    cleanup: { attempted: true, succeeded: true, remainingContainerIds: [] },
+  }));
+  assert.equal(
+    await processOneJob(repo, adapter, {
+      workerId: "cancelled",
+      now: () => now,
+    }),
+    "retry",
+  );
+  assert.equal(repo.listQuarantinedAttempts().length, 0);
 });
 
 test("clean but nonretryable sandbox cancellation still requires reconciliation", async (t) => {
