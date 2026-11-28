@@ -13,11 +13,11 @@ export function assertWorkflowReady(db: DatabaseSync, labId: number): void {
       OR (s.judge_status = 'AC' AND (
         NOT EXISTS (SELECT 1 FROM verdict_sets v WHERE v.submission_id = s.id)
         OR (SELECT COUNT(*) FROM verdicts v WHERE v.submission_id = s.id)
-          <> (SELECT COUNT(*) FROM lab_constraints c WHERE c.lab_id = s.lab_id)
+          <> (SELECT json_array_length(payload,'$.constraints') FROM submission_snapshots WHERE submission_id=s.id)
         OR (SELECT COUNT(*) FROM reviews r WHERE r.submission_id = s.id)
-          <> (SELECT COUNT(*) FROM lab_constraints c WHERE c.lab_id = s.lab_id)
+          <> (SELECT json_array_length(payload,'$.constraints') FROM submission_snapshots WHERE submission_id=s.id)
         OR (SELECT COUNT(*) FROM review_items r WHERE r.submission_id = s.counted_id)
-          <> (SELECT COUNT(*) FROM lab_constraints c WHERE c.lab_id = s.lab_id)
+          <> (SELECT json_array_length(payload,'$.constraints') FROM submission_snapshots WHERE submission_id=s.id)
         OR EXISTS (SELECT 1 FROM reviews r WHERE r.submission_id = s.id AND r.decision IS NULL)
       ))
     ) LIMIT 1

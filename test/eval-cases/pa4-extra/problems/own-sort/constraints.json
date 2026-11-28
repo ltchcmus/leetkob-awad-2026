@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not call a library sorting function: `std::sort`, `std::stable_sort`, `qsort`.",
+    "deduction": 3
+  },
+  {
+    "id": "C2",
+    "text": "Sort with a merge sort you wrote yourself, recursively or iteratively: split into sorted runs and merge them. A library sort or an adjacent-swap bubble sort does not satisfy this constraint, whatever the function is named.",
+    "deduction": 4
+  }
+]

@@ -16,6 +16,7 @@ export function loadModelRouter(
   dependencies: {
     fetch?: typeof fetch;
     write?: (entry: CallLog) => void;
+    wrapProvider?: (provider: ModelProvider) => ModelProvider;
   } = {},
 ): ModelRouter {
   const options: RouterOptions = {
@@ -86,7 +87,12 @@ export function loadModelRouter(
       concurrency,
     };
     const factory = name === "gemini" ? gemini : nvidia;
-    providers.push(factory(model, key, quota, dependencies.fetch));
+    const provider = factory(model, key, quota, dependencies.fetch);
+    providers.push(
+      dependencies.wrapProvider
+        ? dependencies.wrapProvider(provider)
+        : provider,
+    );
   }
   return new ModelRouter(
     providers,

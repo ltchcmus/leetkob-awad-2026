@@ -23,6 +23,8 @@ export type SandboxOutcome =
   | ({ kind: "judged" } & JudgeResult)
   | { kind: "infrastructure_error"; code: string };
 export type Claim = {
+  snapshotVersion?: number;
+  previousCleanupConfirmed?: boolean;
   jobId: string;
   submissionId: string;
   labId: number;
