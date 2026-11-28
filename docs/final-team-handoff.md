@@ -77,3 +77,30 @@ Local integration and hosted baseline checks support continued team
 development. Release readiness still needs public VPS E2E, durable
 cleanup/budget work, checker quality improvements and release-tag CI.
 Semantic model quality and hard-rule correctness have separate findings.
+
+## 28 November 2026 integration update
+
+`08cac125b0d7271ae7511616eb9bb8995e9a5db4` merged PR #24, which integrates
+PR #22's durable persistence/recovery changes after the G4 hardening merge.
+The historical owner lists above describe the pre-integration handoff; they are
+not evidence that the listed implementation work remains undone.
+
+The current local audit records 163 passing tests with no skips, including
+migration/snapshot, quota, crash-recovery, G4 authorization and G5 CLI suites.
+Hosted Sandbox passed on the PR #24 candidate. Public deployment, five-account
+walkthrough, final release-tag CI, final archive/secret scan and rubric-owner
+confirmation of PA3 evaluation requirements remain outstanding.
+
+Post-merge verification: GitHub push workflows passed directly on
+`08cac125` for [Quality](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/46132194592)
+and [Sandbox](https://github.com/ltchcmus/leetkob-awad-2026/actions/runs/46132194574).
+This is not release-tag or public-deployment evidence.
+
+## Scope correction for final audit
+
+The final audit records implementation and CI evidence only. Public deployment,
+release tag/CI, ZIP, secret scan and live five-account work are packaging or
+operations handoff for Công; they are not implementation blockers unless the
+authoritative PA#3 requirements explicitly require them. The repository does
+not contain that authoritative rubric, so final rubric conformance is marked
+`NOT VERIFIED` rather than inferred from missing deployment evidence.

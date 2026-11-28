@@ -1498,3 +1498,61 @@ targeted persistence, migration, recovery and worker-process tests passed 36/36.
 Docker CLI was installed but its daemon was unavailable, so real-container
 sandbox integration was not run and is not claimed as passing. The candidate is
 left uncommitted for owner review.
+
+## 2026-11-28 - Final PA#3 integration audit
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Audit the merged PA#3 integration before release, reconcile stale
+status documents with implementation and recorded evidence, and identify
+release blockers without changing production behavior or evaluation data.
+
+**Changed:** Added an evidence-based integration audit and updated PA#3 status,
+self-assessment, README and handoff wording. The documentation now records that
+migration 002, durable cleanup/reconciliation, quota reservations and trusted
+redaction are integrated; it distinguishes a failing offline evaluator from
+unverified PA#3 rubric applicability.
+
+**Rejected:** Claiming a public deployment, release tag, final archive audit,
+post-merge Docker run, evaluator pass, approved production provider setup, or a
+full PA#3 score. No source, test assertion, official dataset, label, evaluator
+or CI configuration was changed.
+
+**Validation:** On integration SHA `08cac125b0d7271ae7511616eb9bb8995e9a5db4`,
+Node.js 24.11.0 `npm ci`, lint, format check, strict typecheck and the 163-test
+suite passed with zero failures or skips. Focused PA2 (26), G1/G4 (11), G5 (19)
+and persistence/recovery (36) suites passed. Docker CLI was present but its local
+daemon was unavailable. After the audit run, GitHub push workflows passed
+Quality and Sandbox directly on this merged SHA; no release-tag CI is claimed.
+No commit, push or merge was performed.
+
+## 2026-11-28 - Correct final-audit scope
+
+**Owner:** Nguyen Phuc Hau - 23120252
+
+**Tool:** OpenAI Codex, PowerShell, Git, Node.js 24.11.0 and npm.
+
+**Asked for:** Correct the final integration audit so it reports PA#3
+implementation evidence without treating deployment, release packaging or PA4
+evaluator thresholds as PA#3 blockers without an authoritative requirement.
+
+**Changed:** Reclassified R1--R6 as `NOT VERIFIED` against the unavailable
+original PA#3 rubric while retaining their passing implementation/test evidence;
+R7/R8 remain local evidence with rubric status not verified. Moved deployment,
+tag, ZIP, secret-scan and live-walkthrough work to a packaging handoff for Công.
+
+**Kept:** 163/163 full tests, focused PA2/G1/G5/persistence results, direct
+Quality and Sandbox success on `08cac125`, and the recorded evaluator result of
+40 pass, 15 violation, 47 unsure, 40.5% recall, zero wrongful deductions and
+exit 1.
+
+**Rejected:** Claiming evaluator thresholds are PA#3 requirements, treating a
+missing public deployment as an implementation defect, or changing source,
+tests, evaluator data, labels, predictions or CI.
+
+**Validation:** After this scope correction, `npm run lint`, `npm run format:check`,
+`npm run typecheck`, `npm test` and `git diff --check` all exited 0. The full
+suite passed 163 tests with zero failures or skips. No commit, push or merge was
+performed.

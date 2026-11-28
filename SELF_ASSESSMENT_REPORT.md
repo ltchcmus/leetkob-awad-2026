@@ -8,21 +8,22 @@
 - **Assessment status:** provisional and evidence-based; this is not a claimed
   full-rubric pass or release assessment.
 
-The PA#3 rubric is marked from the public deployment, repository and repeatable
-runs. This branch has local integration evidence, but it does not have public
-deployment evidence or a passing official evaluator. The statuses below state
-only what the repository currently supports.
+The authoritative PA#3 rubric is not stored in this repository. The table below
+therefore reports implementation/test evidence and marks rubric conformance as
+**NOT VERIFIED** where no primary requirement is available. Missing public
+deployment, release-tag or packaging evidence is not treated as an implementation
+failure unless the official assignment requires it.
 
-| Rubric criterion                    | Status     | Evidence and gap                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1 — End-to-end deployment flow     | PARTIAL    | Local HTTP/SQLite/worker tests cover lab creation, submission, status, TA review and ownership. A public deployment, five-account walkthrough and independently reachable product flow are not verified.                                                                                                                         |
-| R2 — Queue and sandbox              | PARTIAL    | Durable job/worker and sandbox tests exist, including restart and policy cases. Public operational proof, durable cleanup reconciliation after an uncertain attempt, and release-tag CI remain open.                                                                                                                             |
-| R3 — Hard rules first               | PARTIAL    | Token-aware hard rules run before semantic routing; tests cover comments, strings, raw strings, custom namespaces, imports, aliases, macros, multiline calls and injections. MODEL_OFF has zero wrongful deductions and all current ban-list pairs are decided, but the evaluator as a whole fails its recall/unsure thresholds. |
-| R4 — Semantic model constraints     | PARTIAL    | The repository contains provider, schema, timeout, redaction and call-log boundaries, plus recorded limited real-model evidence. Production dispatch remains disabled pending durable quota and redaction-context work. The official real-model evaluation is not a passing run.                                                 |
-| R5 — Limits and TA review queue     | PARTIAL    | Schema/timeout guards and TA-only review/publish fail-closed paths have local tests. Public workflow verification and final FAQ/deployment review remain open.                                                                                                                                                                   |
-| R6 — Checker command and first eval | PARTIAL    | `src/checker/cli.ts` accepts dataset and prediction paths and writes JSONL. The latest MODEL_OFF CLI run exits 0, but official evaluator exit is 1: 40.5% recall and 46.1% unsure miss the 90%/20% thresholds.                                                                                                                   |
-| R7 — Test-first history             | PASS local | Repository history retains test-first work; the current suite passes 149/149 locally. Hosted/release verification is not asserted here.                                                                                                                                                                                          |
-| R8 — AI log                         | PARTIAL    | [AI-LOG.md](AI-LOG.md) retains historical records and records current changes, rejected alternatives and validation. A final submission audit remains necessary.                                                                                                                                                                 |
+| Rubric criterion                    | Status                           | Evidence and gap                                                                                                                                                                               |
+| ----------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1 — End-to-end workflow            | NOT VERIFIED                     | Implementation evidence: persisted HTTP, worker, review and Publish flow pass locally. The official requirement for public deployment/five-account execution is not available here.            |
+| R2 — Queue and sandbox              | NOT VERIFIED                     | Implementation evidence: durable queue, migration, retry, fencing, quarantine/reconciliation and hosted Sandbox CI pass. Exact rubric acceptance criteria are unavailable.                     |
+| R3 — Hard rules first               | NOT VERIFIED                     | Implementation evidence: hard rules precede semantic routing; tests pass and recorded MODEL_OFF has zero wrongful deductions. The evaluator thresholds are not established as PA#3 gates here. |
+| R4 — Semantic model constraints     | NOT VERIFIED                     | Implementation evidence: schema, privacy, provider, durable quota and redaction boundaries are tested. Exact PA3 provider/deployment requirement is unavailable.                               |
+| R5 — Limits and TA review queue     | NOT VERIFIED                     | Implementation evidence: limits, audit, TA-only review, 204 decision and fail-closed/200-idempotent Publish paths pass. Exact PA3 criterion source is unavailable.                             |
+| R6 — Checker command and evaluation | NOT VERIFIED                     | CLI/JSONL and MODEL_OFF tests pass; recorded evaluator exits 1. Whether that evaluator is a PA3 scoring gate is unverified.                                                                    |
+| R7 — Test-first history             | PASS local / NOT VERIFIED rubric | Test-first commits and 163/163 local tests exist; no official PA3 history threshold is stored here.                                                                                            |
+| R8 — AI log and documentation       | PASS local / NOT VERIFIED rubric | AI log and updated evidence documents exist; no official PA3 documentation rubric is stored here.                                                                                              |
 
 ## Measured checker evidence
 
@@ -55,14 +56,16 @@ evaluation or another reviewed mechanism.
 - Submitted C++ is handled by the worker/sandbox boundary, not the HTTP handler.
 - No model credential belongs in the judge container, source fixture or log.
 
-## What is not claimed
+## Scope limits
 
-- A production deployment, public uptime, or deployment authentication setup.
-- A release/tag, completed CI gate, or full PA#3 score.
-- A passing official MODEL_OFF or real-model evaluation.
-- Durable multi-process model billing/quota enforcement or a production-enabled
-  model worker.
-- An 80-submission load result, appeal workflow, or final operations evidence.
+- This repository does not contain the authoritative PA#3 rubric, so it does
+  not claim a full PA#3 score.
+- The recorded MODEL_OFF evaluator result remains a failing evaluator result;
+  its PA#3 scoring relevance is not verified here.
+- Public deployment, release/tag, ZIP, account provisioning and operations
+  evidence are packaging handoff items unless the official assignment requires
+  them for PA#3.
+- Production model enablement and later load/appeal workflows are not claimed.
 
 Detailed architecture and reproducible commands are in [PA3.md](PA3.md).
 The existing PA#2 assessment below is retained as a historical record and must

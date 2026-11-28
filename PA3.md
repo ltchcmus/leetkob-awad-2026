@@ -49,7 +49,8 @@ npm test
 ```
 
 These commands are defined in `package.json`. At the documented checkpoint,
-the complete local suite passes 149 tests. It is local evidence only.
+the complete local suite passes 163 tests with zero failures or skips on Node.js
+24.11.0. It is local evidence only.
 
 Focused suites are available when investigating a boundary:
 
@@ -118,10 +119,11 @@ output size, non-root execution, no host mounts/Docker socket, and no model
 secret passed to the judge. The local test evidence does not establish that a
 public deployment has these protections operationally.
 
-Known operational gaps include durable cleanup reconciliation after process
-loss, durable model quota reservations, trusted identity-redaction context for
-production model dispatch, public E2E, and release-tag CI. They are not hidden
-by the worker's local tests.
+The integrated persistence boundary includes durable cleanup reconciliation,
+model quota reservations and a trusted identity-redaction context. Public
+operations, deployment configuration, release-tag CI and submission archive work
+are separate packaging handoff items; they are not PA#3 implementation blockers
+unless the authoritative assignment requires them.
 
 ## Checker and review boundary
 
@@ -183,7 +185,10 @@ The latest offline run used official evaluator revision
 
 The run fails because the full evaluator thresholds are not met. The remaining
 uncertain cases are semantic constraints that cannot be safely decided by the
-current lexical hard-rule matcher. This document does not claim evaluator PASS.
+current lexical hard-rule matcher. This is an evaluator result, not evidence
+that those thresholds are PA#3 rubric requirements: the original PA#3 rubric is
+not stored in this repository, so that applicability remains not verified. This
+document does not claim evaluator PASS.
 The reproduction context and prior run records are in
 [runs/pa3-dev/README.md](runs/pa3-dev/README.md).
 
@@ -200,14 +205,15 @@ The reproduction context and prior run records are in
 Steps 1–3 are reproducible in the repository. Step 4 is an operational
 prerequisite, not evidence that a public production service is running.
 
-## Evidence gaps before a full PA#3 claim
+## Verification boundaries
 
-- Public deployment and five-account end-to-end walkthrough.
-- Official evaluator pass: recall at least 90% and unsure at most 20%.
-- Durable model quota and identity-redaction integration before production
-  model dispatch.
-- Public operational verification of sandbox, review and Publish flow.
-- Release-tag CI and final submission audit.
+- The original PA#3 rubric is not stored in this repository. Exact scoring and
+  whether evaluator thresholds apply to PA#3 are therefore **NOT VERIFIED**.
+- Public deployment, release tags, final archive checks and account provisioning
+  are packaging/operations handoff items. They are required only if the official
+  assignment or submission process says so.
+- Production provider enablement requires separately approved configuration; it
+  is not claimed by the repository's local MODEL_OFF evidence.
 
 The historical PA#2 release evidence remains in [PA2.md](PA2.md). The current
 assessment by rubric criterion is in
